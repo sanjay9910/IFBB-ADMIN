@@ -1,11 +1,11 @@
-import React from 'react'
+// src/app/admin/users/page.tsx
+import React from "react";
+import RecentUsersTable from "@/components/admin/RecentUsersTable";
 
-function page() {
+export default function UsersPage() {
   return (
-    <div>
-      <h1>Users</h1>
+    <div  className="bg-white h-full">
+      <RecentUsersTable />
     </div>
-  )
+  );
 }
-
-export default page

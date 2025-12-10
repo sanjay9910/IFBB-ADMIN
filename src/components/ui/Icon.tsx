@@ -1,11 +1,11 @@
 import React from 'react'
 
-function page() {
+function Icon() {
   return (
     <div>
-      <h1>IFBB-ADMIN</h1>
+      <h1>Icon</h1>
     </div>
   )
 }
 
-export default page
+export default Icon

@@ -1,11 +1,11 @@
 import React from 'react'
 
-function page() {
+function Select() {
   return (
     <div>
-      <h1>IFBB-ADMIN</h1>
+      <h1>Select</h1>
     </div>
   )
 }
 
-export default page
+export default Select

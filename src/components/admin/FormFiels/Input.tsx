@@ -1,11 +1,11 @@
 import React from 'react'
 
-function page() {
+function Input() {
   return (
     <div>
-      <h1>IFBB-ADMIN</h1>
+      <h1>Input</h1>
     </div>
   )
 }
 
-export default page
+export default Input

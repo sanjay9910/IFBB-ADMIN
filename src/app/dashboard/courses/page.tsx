@@ -9,6 +9,12 @@ type ModuleItem = {
   description?: string;
   type?: string;
   assetLink?: string;
+  assetFile?: File | null;
+  asset?: {
+    url?: string;
+    fileName?: string;
+    fileType?: string;
+  };
 };
 
 type Course = {
@@ -20,6 +26,7 @@ type Course = {
   durationToComplete?: string;
   modules: ModuleItem[];
   courseThumbnail?: string | null;
+  thumbnailFile?: File | null;
   description?: string;
   isPublic: boolean;
   published: boolean;
@@ -58,11 +65,18 @@ async function fetchCourses() {
       discountedPrice: course.discountedPrice,
       rating: course.averageRating || 0,
       durationToComplete: course.durationToComplete,
-      modules: course.modules || [],
+      modules: course.modules?.map((module: any) => ({
+        _id: module._id,
+        title: module.title,
+        description: module.description,
+        type: module.type,
+        assetLink: module.assetLink,
+        asset: module.asset || {}
+      })) || [],
       courseThumbnail: course.courseThumbnail,
       description: course.description,
       isPublic: course.isPublic,
-      published: course.isPublic, // Assuming isPublic means published
+      published: course.isPublic,
       tags: course.tags || [],
       createdAt: course.createdAt,
       updatedAt: course.updatedAt,
@@ -85,7 +99,9 @@ async function createCourse(courseData: FormData) {
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to create course: ${response.status}`);
+      const errorText = await response.text();
+      console.error("Create course error response:", errorText);
+      throw new Error(`Failed to create course: ${response.status} - ${errorText}`);
     }
     
     return await response.json();
@@ -97,8 +113,8 @@ async function createCourse(courseData: FormData) {
 
 async function updateCourse(courseId: string, courseData: FormData) {
   try {
-    const response = await fetch(`${API_BASE_URL}/update-course/${courseId}`, {
-      method: 'PUT',
+    const response = await fetch(`${API_BASE_URL}/edit-course/${courseId}`, {
+      method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${ADMIN_TOKEN}`,
       },
@@ -106,12 +122,99 @@ async function updateCourse(courseId: string, courseData: FormData) {
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to update course: ${response.status}`);
+      const errorText = await response.text();
+      console.error("Update course error response:", errorText);
+      throw new Error(`Failed to update course: ${response.status} - ${errorText}`);
     }
     
     return await response.json();
   } catch (error) {
     console.error("Error updating course:", error);
+    throw error;
+  }
+}
+
+async function updateModule(courseId: string, moduleId: string, moduleData: FormData) {
+  try {
+    console.log("Updating module:", moduleId, "for course:", courseId);
+    console.log("Module data:", {
+      title: moduleData.get('title'),
+      type: moduleData.get('type'),
+      description: moduleData.get('description'),
+      hasFile: !!moduleData.get('asset'),
+      hasLink: !!moduleData.get('assetLink')
+    });
+    
+    const response = await fetch(`${API_BASE_URL}/edit-module/${courseId}/${moduleId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+      },
+      body: moduleData
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Update module error response:", errorText);
+      throw new Error(`Failed to update module: ${response.status} - ${errorText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error updating module:", error);
+    throw error;
+  }
+}
+
+async function addModule(courseId: string, moduleData: FormData) {
+  try {
+    console.log("Adding module to course:", courseId);
+    console.log("Module data:", {
+      title: moduleData.get('title'),
+      type: moduleData.get('type'),
+      description: moduleData.get('description'),
+      hasFile: !!moduleData.get('asset'),
+      hasLink: !!moduleData.get('assetLink')
+    });
+    
+    const response = await fetch(`${API_BASE_URL}/add-module-to-course/${courseId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+      },
+      body: moduleData
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Add module error response:", errorText);
+      throw new Error(`Failed to add module: ${response.status} - ${errorText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error adding module:", error);
+    throw error;
+  }
+}
+
+async function deleteModule(courseId: string, moduleId: string) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/delete-module/${courseId}/${moduleId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to delete module: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error deleting module:", error);
     throw error;
   }
 }
@@ -177,6 +280,10 @@ export default function CoursesAdminPage() {
     averageRating: 0,
     totalPurchasesCount: 0
   });
+  const [editingModule, setEditingModule] = useState<ModuleItem | null>(null);
+  const [moduleFormOpen, setModuleFormOpen] = useState(false);
+  const [selectedCourseForModule, setSelectedCourseForModule] = useState<string>("");
+  const [moduleError, setModuleError] = useState<string>("");
 
   // Fetch courses on component mount
   useEffect(() => {
@@ -202,7 +309,14 @@ export default function CoursesAdminPage() {
           discountedPrice: course.discountedPrice,
           rating: course.averageRating || 0,
           durationToComplete: course.durationToComplete,
-          modules: course.modules || [],
+          modules: course.modules?.map((module: any) => ({
+            _id: module._id,
+            title: module.title,
+            description: module.description,
+            type: module.type,
+            assetLink: module.assetLink,
+            asset: module.asset || {}
+          })) || [],
           courseThumbnail: course.courseThumbnail,
           description: course.description,
           isPublic: course.isPublic,
@@ -251,6 +365,7 @@ export default function CoursesAdminPage() {
       durationToComplete: "",
       modules: [],
       courseThumbnail: null,
+      thumbnailFile: null,
       description: "",
       isPublic: false,
       published: false,
@@ -262,13 +377,134 @@ export default function CoursesAdminPage() {
   }
 
   function openEditCourse(c: Course) {
-    setEditing({ ...c });
+    setEditing({ 
+      ...c,
+      thumbnailFile: null
+    });
     setFormOpen(true);
   }
 
   function closeForm() {
     setEditing(null);
     setFormOpen(false);
+  }
+
+  function closeModuleForm() {
+    setEditingModule(null);
+    setModuleFormOpen(false);
+    setSelectedCourseForModule("");
+    setModuleError("");
+  }
+
+  function openNewModule(courseId: string) {
+    setEditingModule({
+      _id: "",
+      title: "",
+      description: "",
+      type: "pdf",
+      assetLink: "",
+      assetFile: null
+    });
+    setSelectedCourseForModule(courseId);
+    setModuleError("");
+    setModuleFormOpen(true);
+  }
+
+  function openEditModule(module: ModuleItem, courseId: string) {
+    setEditingModule({ ...module, assetFile: null });
+    setSelectedCourseForModule(courseId);
+    setModuleError("");
+    setModuleFormOpen(true);
+  }
+
+  async function submitModuleForm(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!editingModule || !selectedCourseForModule) return;
+    
+    // Validation
+    if (!editingModule.title.trim()) {
+      setModuleError("Please enter module title");
+      return;
+    }
+    
+    if (!editingModule.type) {
+      setModuleError("Please select module type");
+      return;
+    }
+    
+    if (!editingModule.assetFile && !editingModule.assetLink) {
+      setModuleError("Please upload a file or provide a link");
+      return;
+    }
+
+    setSaving(true);
+    setModuleError("");
+    
+    try {
+      const formData = new FormData();
+      formData.append('title', editingModule.title);
+      formData.append('description', editingModule.description || '');
+      formData.append('type', editingModule.type || '');
+      
+      // IMPORTANT: Check file upload
+      if (editingModule.assetFile) {
+        console.log("Adding file to FormData:", editingModule.assetFile.name);
+        formData.append('asset', editingModule.assetFile);
+      } 
+      
+      // Check for link
+      if (editingModule.assetLink) {
+        console.log("Adding link to FormData:", editingModule.assetLink);
+        formData.append('assetLink', editingModule.assetLink);
+      }
+
+      console.log("FormData contents:");
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+
+      let response;
+      if (editingModule._id) {
+        // Update existing module
+        console.log(`Updating module ${editingModule._id} for course ${selectedCourseForModule}`);
+        response = await updateModule(selectedCourseForModule, editingModule._id, formData);
+      } else {
+        // Add new module
+        console.log(`Adding new module to course ${selectedCourseForModule}`);
+        response = await addModule(selectedCourseForModule, formData);
+      }
+
+      console.log("API Response:", response);
+      
+      if (response.message || response.success) {
+        // Refresh the course list
+        await loadCourses();
+        closeModuleForm();
+        alert(editingModule._id ? "Module updated successfully!" : "Module added successfully!");
+      } else {
+        throw new Error("Failed to save module");
+      }
+    } catch (error: any) {
+      console.error("Error saving module:", error);
+      setModuleError(error.message || "Failed to save module. Please try again.");
+      alert("Failed to save module. Please check console for details.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deleteModuleHandler(courseId: string, moduleId: string) {
+    if (!confirm("Delete this module? This cannot be undone.")) return;
+    
+    try {
+      await deleteModule(courseId, moduleId);
+      // Refresh the course list
+      await loadCourses();
+      alert("Module deleted successfully!");
+    } catch (error) {
+      console.error("Error deleting module:", error);
+      alert("Failed to delete module. Please try again.");
+    }
   }
 
   async function submitForm(e?: React.FormEvent) {
@@ -287,17 +523,20 @@ export default function CoursesAdminPage() {
       formData.append('title', editing.title);
       formData.append('description', editing.description || '');
       formData.append('price', editing.price.toString());
+      
       if (editing.discountedPrice) {
         formData.append('discountedPrice', editing.discountedPrice.toString());
       }
+      
       if (editing.durationToComplete) {
         formData.append('durationToComplete', editing.durationToComplete);
       }
+      
       formData.append('isPublic', editing.isPublic.toString());
       
-      // Handle thumbnail upload if it's a file
-      if (editing.courseThumbnail && typeof editing.courseThumbnail !== 'string') {
-        formData.append('thumbnail', editing.courseThumbnail);
+      // Handle thumbnail upload
+      if (editing.thumbnailFile) {
+        formData.append('thumbnail', editing.thumbnailFile);
       }
 
       let response;
@@ -329,8 +568,11 @@ export default function CoursesAdminPage() {
     
     try {
       await deleteCourse(courseId);
-      // Refresh the course list
+
       await loadCourses();
+      if (selectedCourse?._id === courseId) {
+        setSelectedCourse(null);
+      }
       alert("Course deleted successfully!");
     } catch (error) {
       console.error("Error deleting course:", error);
@@ -341,45 +583,28 @@ export default function CoursesAdminPage() {
   function toggleVisibility(courseId: string) {
     const course = courses.find(c => c._id === courseId);
     if (!course) return;
-    
-    // Update locally first for immediate feedback
     setCourses(prev => prev.map(p => 
       p._id === courseId ? { ...p, isPublic: !p.isPublic, published: !p.isPublic } : p
     ));
-    
-    // Then update on server
     const formData = new FormData();
     formData.append('isPublic', (!course.isPublic).toString());
     
     updateCourse(courseId, formData).catch(error => {
       console.error("Failed to update visibility:", error);
-      // Revert on error
       setCourses(prev => prev.map(p => 
         p._id === courseId ? { ...p, isPublic: course.isPublic, published: course.isPublic } : p
       ));
     });
   }
 
-  function togglePublish(courseId: string) {
-    const course = courses.find(c => c._id === courseId);
-    if (!course) return;
-    
-    // Update locally first for immediate feedback
-    setCourses(prev => prev.map(p => 
-      p._id === courseId ? { ...p, published: !p.published, isPublic: !p.published } : p
-    ));
-    
-    // Then update on server
-    const formData = new FormData();
-    formData.append('isPublic', (!course.published).toString());
-    
-    updateCourse(courseId, formData).catch(error => {
-      console.error("Failed to update publish status:", error);
-      // Revert on error
-      setCourses(prev => prev.map(p => 
-        p._id === courseId ? { ...p, published: course.published, isPublic: course.published } : p
-      ));
-    });
+  function openModuleContent(module: ModuleItem) {
+    if (module.asset?.url) {
+      window.open(module.asset.url, '_blank');
+    } else if (module.assetLink) {
+      window.open(module.assetLink, '_blank');
+    } else {
+      alert("No content available for this module");
+    }
   }
 
   /* UI */
@@ -662,13 +887,13 @@ export default function CoursesAdminPage() {
         )}
       </div>
 
-      {/* ---------- Form Modal (Create / Edit) ---------- */}
+      {/* ---------- Form Modal (Create / Edit Course) ---------- */}
       {formOpen && editing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeForm} />
           <form
             onSubmit={submitForm}
-            className="relative z-50 w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+            className="relative z-50 w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]"
           >
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
               <div className="flex items-center justify-between">
@@ -687,7 +912,7 @@ export default function CoursesAdminPage() {
               </div>
             </div>
 
-            <div className="p-6 max-h-[70vh] overflow-y-auto">
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -765,16 +990,22 @@ export default function CoursesAdminPage() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Course Thumbnail</label>
                   <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-indigo-400 transition cursor-pointer bg-slate-50">
-                    {editing.courseThumbnail ? (
+                    {editing.courseThumbnail || editing.thumbnailFile ? (
                       <div className="relative">
                         <img
-                          src={typeof editing.courseThumbnail === 'string' ? editing.courseThumbnail : URL.createObjectURL(editing.courseThumbnail)}
+                          src={editing.thumbnailFile ? URL.createObjectURL(editing.thumbnailFile) : (editing.courseThumbnail || PLACEHOLDER)}
                           alt="Preview"
                           className="w-full h-48 object-cover rounded-lg mx-auto"
                         />
                         <button
                           type="button"
-                          onClick={() => setEditing({ ...editing, courseThumbnail: null })}
+                          onClick={() => {
+                            setEditing({ 
+                              ...editing, 
+                              courseThumbnail: null,
+                              thumbnailFile: null 
+                            });
+                          }}
                           className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -797,7 +1028,7 @@ export default function CoursesAdminPage() {
                       onChange={(e) => {
                         const file = e.target.files?.[0];
                         if (file) {
-                          setEditing({ ...editing, courseThumbnail: file });
+                          setEditing({ ...editing, thumbnailFile: file });
                         }
                       }}
                     />
@@ -856,11 +1087,209 @@ export default function CoursesAdminPage() {
         </div>
       )}
 
+      {/* ---------- Module Form Modal ---------- */}
+      {moduleFormOpen && editingModule && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModuleForm} />
+          <form
+            onSubmit={submitModuleForm}
+            className="relative z-50 w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+          >
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">
+                  {editingModule._id ? "Edit Module" : "Add New Module"}
+                </h2>
+                <button
+                  type="button"
+                  onClick={closeModuleForm}
+                  className="p-2 hover:bg-white/20 rounded-full transition"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <div className="space-y-6">
+                {/* Error Message */}
+                {moduleError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">{moduleError}</p>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Module Title *</label>
+                  <input
+                    type="text"
+                    value={editingModule.title}
+                    onChange={(e) => setEditingModule({ ...editingModule, title: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                    required
+                    placeholder="e.g., Introduction to Course"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
+                  <textarea
+                    value={editingModule.description || ""}
+                    onChange={(e) => setEditingModule({ ...editingModule, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none"
+                    placeholder="Brief description of the module..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Content Type *</label>
+                  <select
+                    value={editingModule.type || ""}
+                    onChange={(e) => setEditingModule({ ...editingModule, type: e.target.value })}
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  >
+                    <option value="">Select type</option>
+                    <option value="video">Video</option>
+                    <option value="pdf">pdf</option>
+                    <option value="text">Text Content</option>
+                    <option value="quiz">Quiz</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Content *</label>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-2">Upload File</label>
+                      <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-indigo-400 transition cursor-pointer bg-slate-50">
+                        {editingModule.assetFile ? (
+                          <div className="relative">
+                            <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                              <div className="text-2xl">
+                                {editingModule.type === 'video' ? '🎬' : 
+                                 editingModule.type === 'pdf' ? '📄' : '📝'}
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium text-slate-900">{editingModule.assetFile.name}</div>
+                                <div className="text-sm text-slate-600">{(editingModule.assetFile.size / 1024 / 1024).toFixed(2)} MB</div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingModule({ ...editingModule, assetFile: null });
+                                  setModuleError("");
+                                }}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="py-6">
+                            <div className="text-4xl mb-3">📎</div>
+                            <p className="text-slate-600 mb-2">Upload video, PDF or other file</p>
+                            <p className="text-sm text-slate-500">Max file size: 50MB</p>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          id="moduleFile"
+                          className="hidden"
+                          accept={editingModule.type === 'video' ? 'video/*' : 
+                                  editingModule.type === 'pdf' ? '.pdf' : '*'}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setEditingModule({ ...editingModule, assetFile: file, assetLink: "" });
+                              setModuleError("");
+                            }
+                          }}
+                        />
+                        <label
+                          htmlFor="moduleFile"
+                          className="inline-block mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium cursor-pointer transition"
+                        >
+                          Choose File
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="text-center text-slate-500">OR</div>
+
+                    <div>
+                      <label className="block text-sm text-slate-600 mb-2">External Link</label>
+                      <input
+                        type="text"
+                        value={editingModule.assetLink || ""}
+                        onChange={(e) => {
+                          setEditingModule({ ...editingModule, assetLink: e.target.value, assetFile: null });
+                          setModuleError("");
+                        }}
+                        className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                        placeholder="https://example.com/video"
+                      />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">* Please provide either a file upload OR an external link</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-slate-200 p-6 bg-slate-50">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-slate-600">
+                  {editingModule._id ? "Update module details" : "Add new module"}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={closeModuleForm}
+                    className="px-6 py-3 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className={`px-6 py-3 rounded-xl font-medium transition ${
+                      saving
+                        ? "bg-slate-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
+                    }`}
+                  >
+                    {saving ? (
+                      <span className="flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Saving...
+                      </span>
+                    ) : editingModule._id ? (
+                      "Update Module"
+                    ) : (
+                      "Add Module"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* ---------- View Modal ---------- */}
       {selectedCourse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedCourse(null)} />
-          <div className="relative z-50 max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="relative z-50 max-w-6xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
             <div className="relative h-64 bg-gradient-to-r from-indigo-500 to-purple-600">
               <img
                 src={selectedCourse.courseThumbnail || PLACEHOLDER}
@@ -890,38 +1319,98 @@ export default function CoursesAdminPage() {
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Course Details */}
                 <div className="md:col-span-2">
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold text-slate-900 mb-3">Description</h3>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-slate-900">Description</h3>
+                      <button
+                        onClick={() => openNewModule(selectedCourse._id)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-sm font-medium transition"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Module
+                      </button>
+                    </div>
                     <p className="text-slate-600">{selectedCourse.description || "No description provided"}</p>
                   </div>
 
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-slate-900 mb-3">Modules ({selectedCourse.modules?.length || 0})</h3>
                     {selectedCourse.modules && selectedCourse.modules.length > 0 ? (
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {selectedCourse.modules.map((module, index) => (
                           <div
                             key={module._id}
-                            className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition"
+                            className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition group"
                           >
-                            <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-medium">
-                              {index + 1}
+                            <div className="flex items-center gap-4 flex-1">
+                              <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-medium">
+                                {index + 1}
+                              </div>
+                              <div className="flex-1">
+                                <div className="font-medium text-slate-900">{module.title}</div>
+                                {module.description && (
+                                  <div className="text-sm text-slate-600 mt-1">{module.description}</div>
+                                )}
+                                <div className="flex items-center gap-3 mt-2">
+                                  {module.type && (
+                                    <Pill className="bg-slate-200 text-slate-700">
+                                      {module.type}
+                                    </Pill>
+                                  )}
+                                  {(module.asset?.url || module.assetLink) && (
+                                    <button
+                                      onClick={() => openModuleContent(module)}
+                                      className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200 transition"
+                                    >
+                                      {module.asset?.url ? '📁 View Content' : '🔗 View Link'}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="font-medium text-slate-900">{module.title}</div>
-                              {module.description && (
-                                <div className="text-sm text-slate-600">{module.description}</div>
-                              )}
+                            <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => openEditModule(module, selectedCourse._id)}
+                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                                title="Edit module"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => deleteModuleHandler(selectedCourse._id, module._id)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                title="Delete module"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-slate-500">No modules added yet</p>
+                      <div className="text-center py-8 bg-slate-50 rounded-xl">
+                        <div className="text-4xl mb-3">📚</div>
+                        <p className="text-slate-600 mb-4">No modules added yet</p>
+                        <button
+                          onClick={() => openNewModule(selectedCourse._id)}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-sm font-medium transition"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Add First Module
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -966,10 +1455,28 @@ export default function CoursesAdminPage() {
                           </div>
                         </div>
                       </div>
+
+                      <div>
+                        <div className="text-sm text-slate-500 mb-2">Rating</div>
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 text-amber-500">
+                            <svg className="w-5 h-5 fill-current" viewBox="0 0 20 20">
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                            <span className="text-lg font-semibold">{selectedCourse.rating?.toFixed(1) || "0.0"}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex gap-3">
+                    <button
+                      onClick={() => openNewModule(selectedCourse._id)}
+                      className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition"
+                    >
+                      Add Module
+                    </button>
                     <button
                       onClick={() => {
                         setSelectedCourse(null);

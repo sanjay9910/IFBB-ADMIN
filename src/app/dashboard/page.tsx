@@ -1,7 +1,5 @@
-// src/app/admin/page.tsx
-import React from "react";
-import ModuleCard from "../../components/admin/ModulCard";
-import RecentUsersTable from "../../components/admin/RecentUsersTable";
+import ModuleCard from "@/components/admin/ModulCard";
+import RecentUsersTable from "@/components/admin/RecentUsersTable";
 
 const modules = [
   { key: "users", title: "Users", total: 124 },
@@ -12,19 +10,27 @@ const modules = [
   { key: "settings", title: "Settings", total: 1 },
 ];
 
-export default function AdminPage() {
+export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Dashboard</h1>
 
+      {/* Top Cards */}
       <section className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {modules.map((m) => (
-          <ModuleCard key={m.key} title={m.title} total={m.total} />
+          <ModuleCard
+            key={m.key}
+            title={m.title}
+            total={m.total}
+          />
         ))}
       </section>
 
+      {/* Recent Users */}
       <section>
-        <h2 className="text-lg font-medium mb-3">Recent Users</h2>
+        <h2 className="text-lg font-medium mb-3">
+          Recent Users
+        </h2>
         <RecentUsersTable />
       </section>
     </div>

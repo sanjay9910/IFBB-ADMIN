@@ -9,12 +9,12 @@ import {
 } from "lucide-react";
 
 const items = [
-  { key: "users", label: "Users", href: "/users", icon: Users },
-  { key: "brands", label: "Brand Logo", href: "/brands", icon: Award },
-  { key: "courses", label: "Courses", href: "/courses", icon: BookOpen },
-  { key: "certificates", label: "Certificates", href: "/certificate", icon: FileText },
-  { key: "news", label: "News", href: "/news", icon: Newspaper },
-  { key: "settings", label: "Settings", href: "/setting", icon: Settings },
+  { key: "users", label: "Users", href: "/dashboard/users", icon: Users },
+  { key: "brands", label: "Brand Logo", href: "/dashboard/brands", icon: Award },
+  { key: "courses", label: "Courses", href: "/dashboard/courses", icon: BookOpen },
+  { key: "certificates", label: "Certificates", href: "/dashboard/certificate", icon: FileText },
+  { key: "news", label: "News", href: "/dashboard/news", icon: Newspaper },
+  { key: "settings", label: "Settings", href: "/dashboard/setting", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -53,20 +53,6 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* Admin Badge */}
-        {/* <div className="px-6 py-4">
-          <div className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 backdrop-blur-sm rounded-xl p-3 border border-blue-400/30">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 font-medium">Admin Panel</p>
-                <p className="text-sm text-white font-semibold">Dashboard</p>
-              </div>
-            </div>
-          </div>
-        </div> */}
 
         {/* Navigation */}
         <nav className="flex-1 flex flex-col gap-2 px-4 py-2 overflow-y-auto">

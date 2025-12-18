@@ -223,15 +223,6 @@ export default function UsersList() {
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        {/* <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Users className="w-8 h-8 text-blue-600" />
-            Users Management
-          </h1>
-          <p className="text-gray-600 mt-2">Manage all users and their accounts</p>
-        </div> */}
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-2xl shadow border border-gray-200">
@@ -282,7 +273,7 @@ export default function UsersList() {
                 placeholder="Search by name or email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-12 pr-4 py-3 border border-gray-300 text-black rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -362,7 +353,7 @@ export default function UsersList() {
                           <div className="flex items-center gap-3">
                             <img
                               src={student.avatar}
-                              className="w-12 h-12 rounded-xl shadow-sm group-hover:shadow transition"
+                              className="w-12 h-12 rounded-full shadow-sm group-hover:shadow transition"
                               alt={student.name}
                             />
                             <div>
@@ -370,7 +361,7 @@ export default function UsersList() {
                                 {student.name}
                               </span>
                               <div className="text-xs text-gray-500 mt-1">
-                                ID: {student.id.substring(0, 8)}...
+                                {/* ID: {student.id.substring(0, 8)}... */}
                               </div>
                             </div>
                           </div>

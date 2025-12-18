@@ -4,7 +4,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { adminLogin } from "@/features/auth/authSlice";
 import type { AppDispatch, RootState } from "@/store/store";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useEffect, useState } from "react";
+import Img from '../../../../public/images/TrainerImg2.jpg'
+import ImgLogo from '../../../../public/images/Logo.png'
 
 export default function LoginPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -20,7 +23,7 @@ export default function LoginPage() {
   /* ✅ Login success → dashboard */
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/dashboard");
+      router.replace("/dashboard/users");
     }
   }, [isAuthenticated, router]);
 
@@ -34,12 +37,12 @@ export default function LoginPage() {
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-black">
       {/* ================= LEFT IMAGE SECTION ================= */}
       <div className="relative hidden lg:flex items-center justify-center overflow-hidden">
-        <img
-          src="https://images.unsplash.com/photo-1599058917212-d750089bc07e?q=80&w=1600&auto=format&fit=crop"
+        <Image 
+          src={Img}
           alt="Bodybuilder"
           className="absolute inset-0 w-full h-full object-cover scale-110 animate-[slowZoom_20s_linear_infinite]"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" />
 
         <div className="relative z-10 px-10">
           <h1 className="text-4xl font-extrabold text-white leading-tight mb-4 animate-fadeInUp">
@@ -61,7 +64,7 @@ export default function LoginPage() {
           {/* Logo / Title */}
           <div className="text-center mb-6">
             <div className="mx-auto mb-3 w-16 h-16 rounded-full bg-black text-white flex items-center justify-center text-2xl font-bold">
-              IFBB
+              <Image src={ImgLogo} alt="logo" />
             </div>
             <h2 className="text-2xl font-bold text-gray-900">
               Admin Login
@@ -118,9 +121,9 @@ export default function LoginPage() {
           </button>
 
           {/* Footer */}
-          <p className="text-center text-xs text-gray-500 mt-6">
+          {/* <p className="text-center text-xs text-gray-500 mt-6">
             © {new Date().getFullYear()} IFBB Fitness Platform
-          </p>
+          </p> */}
         </form>
       </div>
 

@@ -3,6 +3,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { User, Mail, Globe, Bell, Lock, Check, X, Camera, Trash2, Save, RotateCcw, Shield } from "lucide-react";
+import Img from '../../../../src/components/assets/sanjay.jpeg'
 
 type ProfileForm = {
   name: string;
@@ -175,7 +176,7 @@ export default function AdminSettings() {
                   <div className="w-36 h-36 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 p-1 shadow-2xl">
                     <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
                       {form.avatarPreview ? (
-                        <img src={form.avatarPreview} alt="avatar" className="w-full h-full object-cover" />
+                        <Image src={Img} alt="avatar" className="w-full h-full object-cover" />
                       ) : (
                         <div className="flex flex-col items-center justify-center">
                           <User className="w-12 h-12 text-slate-300" />
@@ -211,18 +212,6 @@ export default function AdminSettings() {
                 </div>
 
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPickAvatar} />
-
-                {/* <div className="mt-4 text-xs text-center text-slate-500 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
-                  <p className="font-medium">Recommended:</p>
-                  <p>300×300px JPG/PNG</p>
-                </div> */}
-
-                {/* {form.avatarPreview && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200">
-                    <Check className="w-4 h-4" />
-                    Preview ready
-                  </div>
-                )} */}
               </div>
 
               {/* Form Fields */}
@@ -274,37 +263,6 @@ export default function AdminSettings() {
                     </select>
                   </div>
 
-                  {/* <div>
-                    <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
-                      <Bell className="w-4 h-4 text-slate-500" />
-                      Notifications
-                    </label>
-                    <div className="flex gap-6 bg-slate-50 rounded-xl px-4 py-3 border-2 border-slate-200">
-                      <label className="flex items-center gap-2 text-sm cursor-pointer group">
-                        <div className="relative">
-                          <input
-                            type="checkbox"
-                            checked={form.notifications.email}
-                            onChange={(e) => updateNestedNotification("email", e.target.checked)}
-                            className="w-5 h-5 rounded border-2 border-slate-300 checked:bg-blue-600 checked:border-blue-600 cursor-pointer"
-                          />
-                        </div>
-                        <span className="text-slate-700 font-medium group-hover:text-blue-600 transition-colors">Email</span>
-                      </label>
-
-                      <label className="flex items-center gap-2 text-sm cursor-pointer group">
-                        <div className="relative">
-                          <input
-                            type="checkbox"
-                            checked={form.notifications.sms}
-                            onChange={(e) => updateNestedNotification("sms", e.target.checked)}
-                            className="w-5 h-5 rounded border-2 border-slate-300 checked:bg-blue-600 checked:border-blue-600 cursor-pointer"
-                          />
-                        </div>
-                        <span className="text-slate-700 font-medium group-hover:text-blue-600 transition-colors">SMS</span>
-                      </label>
-                    </div>
-                  </div> */}
                 </div>
               </div>
             </div>
@@ -446,13 +404,7 @@ export default function AdminSettings() {
           </div>
         </div>
 
-        {/* Footer Note */}
-        {/* <div className="mt-6 text-center">
-          <div className="inline-flex items-center gap-2 text-xs text-slate-500 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-slate-200">
-            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-            <span>Replace <code className="px-2 py-0.5 bg-slate-100 rounded text-slate-700">saveProfileToApi</code> with your backend API</span>
-          </div>
-        </div> */}
+
       </div>
     </div>
   );

@@ -666,7 +666,7 @@ export default function CoursesAdminPage() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search courses, tags, or descriptions..."
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                  className="w-full pl-10 text-black pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                 />
                 {query && (
                   <button
@@ -921,7 +921,7 @@ export default function CoursesAdminPage() {
                       type="text"
                       value={editing.title}
                       onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      className="w-full px-4 py-3 text-black bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                       required
                     />
                   </div>
@@ -932,7 +932,7 @@ export default function CoursesAdminPage() {
                       type="text"
                       value={editing.durationToComplete || ""}
                       onChange={(e) => setEditing({ ...editing, durationToComplete: e.target.value })}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      className="w-full px-4 text-black py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                       placeholder="e.g., 40 hours"
                     />
                   </div>
@@ -944,7 +944,7 @@ export default function CoursesAdminPage() {
                     value={editing.description || ""}
                     onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none"
+                    className="w-full px-4 py-3 text-black bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none"
                   />
                 </div>
 
@@ -957,7 +957,7 @@ export default function CoursesAdminPage() {
                       min="0"
                       value={editing.price}
                       onChange={(e) => setEditing({ ...editing, price: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      className="w-full px-4 py-3 text-black text-black bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                       required
                     />
                   </div>
@@ -970,7 +970,7 @@ export default function CoursesAdminPage() {
                       min="0"
                       value={editing.discountedPrice || ""}
                       onChange={(e) => setEditing({ ...editing, discountedPrice: e.target.value ? parseFloat(e.target.value) : undefined })}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      className="w-full px-4 text-black text-black py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                     />
                   </div>
 
@@ -979,10 +979,10 @@ export default function CoursesAdminPage() {
                     <select
                       value={editing.isPublic ? "true" : "false"}
                       onChange={(e) => setEditing({ ...editing, isPublic: e.target.value === "true", published: e.target.value === "true" })}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-3 bg-white border text-black border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                     >
-                      <option value="false">Private (Draft)</option>
-                      <option value="true">Public (Published)</option>
+                      <option className="text-black" value="false">Private</option>
+                      <option className="text-black" value="true">Public</option>
                     </select>
                   </div>
                 </div>
@@ -1089,7 +1089,7 @@ export default function CoursesAdminPage() {
 
       {/* ---------- Module Form Modal ---------- */}
       {moduleFormOpen && editingModule && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex  items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModuleForm} />
           <form
             onSubmit={submitModuleForm}
@@ -1127,7 +1127,7 @@ export default function CoursesAdminPage() {
                     type="text"
                     value={editingModule.title}
                     onChange={(e) => setEditingModule({ ...editingModule, title: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-3 bg-white text-black border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                     required
                     placeholder="e.g., Introduction to Course"
                   />
@@ -1139,7 +1139,7 @@ export default function CoursesAdminPage() {
                     value={editingModule.description || ""}
                     onChange={(e) => setEditingModule({ ...editingModule, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none"
+                    className="w-full px-4 py-3 text-black bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none"
                     placeholder="Brief description of the module..."
                   />
                 </div>
@@ -1149,13 +1149,13 @@ export default function CoursesAdminPage() {
                   <select
                     value={editingModule.type || ""}
                     onChange={(e) => setEditingModule({ ...editingModule, type: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-3 bg-white text-black border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                   >
                     <option value="">Select type</option>
-                    <option value="video">Video</option>
+                    <option value="video">video</option>
                     <option value="pdf">pdf</option>
-                    <option value="text">Text Content</option>
-                    <option value="quiz">Quiz</option>
+                    {/* <option value="text">Text Content</option>
+                    <option value="quiz">Quiz</option> */}
                   </select>
                 </div>
 
@@ -1194,7 +1194,7 @@ export default function CoursesAdminPage() {
                           <div className="py-6">
                             <div className="text-4xl mb-3">📎</div>
                             <p className="text-slate-600 mb-2">Upload video, PDF or other file</p>
-                            <p className="text-sm text-slate-500">Max file size: 50MB</p>
+                            <p className="text-sm text-slate-500">Max file size: 10MB</p>
                           </div>
                         )}
                         <input
@@ -1231,7 +1231,7 @@ export default function CoursesAdminPage() {
                           setEditingModule({ ...editingModule, assetLink: e.target.value, assetFile: null });
                           setModuleError("");
                         }}
-                        className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                        className="w-full px-4 py-3 bg-white txet-black border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                         placeholder="https://example.com/video"
                       />
                     </div>

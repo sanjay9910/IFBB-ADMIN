@@ -86,13 +86,9 @@ export default function Header() {
               {/* Profile dropdown */}
               {profileOpen && (
                 <div className="absolute right-0 mt-2 w-44 bg-white border rounded-md shadow-lg py-1 z-[100]">
-                  <a href="/admin/profile" className="block px-4 py-2 text-sm hover:bg-slate-100">
+                  <a href="/dashboard/setting" className="block px-4 py-2 text-black text-sm hover:bg-slate-100">
                     Profile
                   </a>
-                  <a href="/admin/settings" className="block px-4 py-2 text-sm hover:bg-slate-100">
-                    Settings
-                  </a>
-
                   <button
                     onClick={() => {
                       setProfileOpen(false);

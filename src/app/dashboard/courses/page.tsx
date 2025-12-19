@@ -37,16 +37,17 @@ type Course = {
 };
 
 /* ------------- Constants ------------- */
-const ADMIN_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OTJlYzU5NDliZjAyYWIwODJiOGIyODYiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NTg3NzkzMSwiaXNzIjoiaWlmYiIsImF1ZCI6ImlpZmItYXVkaWVuY2UiLCJleHAiOjE3NjYxMzcxMzF9.vf348GFqAWkiaF9LqHIgod07o3sLuiKCkrgi_v4CUKQ";
+const ADMIN_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OTJlYzU5NDliZjAyYWIwODJiOGIyODYiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NjEzODkzNywiaXNzIjoiaWlmYiIsImF1ZCI6ImlpZmItYXVkaWVuY2UiLCJleHAiOjE3NjYzOTgxMzd9.k3l71CReaeWMFu7JhRqgwiFBWqrNGZJ1IpBxQ6xd5ng";
 
 const API_BASE_URL = "https://ifbb-1.onrender.com/api/admin";
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?q=80&w=1200&auto=format&fit=crop";
 
 /* ------------- API Functions ------------- */
-async function fetchCourses() {
+async function fetchCourses(page = 1, limit = 10) {
   try {
-    const response = await fetch(`${API_BASE_URL}/get-stats`, {
+    // Fetch all courses with pagination support
+    const response = await fetch(`${API_BASE_URL}/get-stats?page=${page}&limit=${limit}`, {
       headers: {
         'Authorization': `Bearer ${ADMIN_TOKEN}`,
         'Content-Type': 'application/json'
@@ -58,33 +59,62 @@ async function fetchCourses() {
     }
     
     const data = await response.json();
-    return data.stats.recentCourses.map((course: any) => ({
-      _id: course._id,
-      title: course.title,
-      price: course.price,
-      discountedPrice: course.discountedPrice,
-      rating: course.averageRating || 0,
-      durationToComplete: course.durationToComplete,
-      modules: course.modules?.map((module: any) => ({
-        _id: module._id,
-        title: module.title,
-        description: module.description,
-        type: module.type,
-        assetLink: module.assetLink,
-        asset: module.asset || {}
-      })) || [],
-      courseThumbnail: course.courseThumbnail,
-      description: course.description,
-      isPublic: course.isPublic,
-      published: course.isPublic,
-      tags: course.tags || [],
-      createdAt: course.createdAt,
-      updatedAt: course.updatedAt,
-      purchasedByHowMuch: course.purchasedByHowMuch || 0
-    })) as Course[];
+    return {
+      courses: data.stats.recentCourses.map((course: any) => ({
+        _id: course._id,
+        title: course.title,
+        price: course.price,
+        discountedPrice: course.discountedPrice,
+        rating: course.averageRating || 0,
+        durationToComplete: course.durationToComplete,
+        modules: course.modules?.map((module: any) => ({
+          _id: module._id,
+          title: module.title,
+          description: module.description,
+          type: module.type,
+          assetLink: module.assetLink,
+          asset: module.asset || {}
+        })) || [],
+        courseThumbnail: course.courseThumbnail,
+        description: course.description,
+        isPublic: course.isPublic,
+        published: course.isPublic,
+        tags: course.tags || [],
+        createdAt: course.createdAt,
+        updatedAt: course.updatedAt,
+        purchasedByHowMuch: course.purchasedByHowMuch || 0
+      })) as Course[],
+      total: data.stats.totalCourses || 0,
+      page: page,
+      totalPages: Math.ceil((data.stats.totalCourses || 0) / limit)
+    };
   } catch (error) {
     console.error("Error fetching courses:", error);
-    return [];
+    return { courses: [], total: 0, page: 1, totalPages: 0 };
+  }
+}
+
+// Add new function for toggling course visibility
+async function toggleCourseVisibility(courseId: string, isPublic: boolean) {
+  try {
+    const response = await fetch(`${API_BASE_URL}/change-course-visibility/${courseId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ isPublic })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to update visibility: ${response.status} - ${errorText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error toggling course visibility:", error);
+    throw error;
   }
 }
 
@@ -136,15 +166,6 @@ async function updateCourse(courseId: string, courseData: FormData) {
 
 async function updateModule(courseId: string, moduleId: string, moduleData: FormData) {
   try {
-    console.log("Updating module:", moduleId, "for course:", courseId);
-    console.log("Module data:", {
-      title: moduleData.get('title'),
-      type: moduleData.get('type'),
-      description: moduleData.get('description'),
-      hasFile: !!moduleData.get('asset'),
-      hasLink: !!moduleData.get('assetLink')
-    });
-    
     const response = await fetch(`${API_BASE_URL}/edit-module/${courseId}/${moduleId}`, {
       method: 'PATCH',
       headers: {
@@ -155,7 +176,6 @@ async function updateModule(courseId: string, moduleId: string, moduleData: Form
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Update module error response:", errorText);
       throw new Error(`Failed to update module: ${response.status} - ${errorText}`);
     }
     
@@ -168,15 +188,6 @@ async function updateModule(courseId: string, moduleId: string, moduleData: Form
 
 async function addModule(courseId: string, moduleData: FormData) {
   try {
-    console.log("Adding module to course:", courseId);
-    console.log("Module data:", {
-      title: moduleData.get('title'),
-      type: moduleData.get('type'),
-      description: moduleData.get('description'),
-      hasFile: !!moduleData.get('asset'),
-      hasLink: !!moduleData.get('assetLink')
-    });
-    
     const response = await fetch(`${API_BASE_URL}/add-module-to-course/${courseId}`, {
       method: 'POST',
       headers: {
@@ -187,7 +198,6 @@ async function addModule(courseId: string, moduleData: FormData) {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Add module error response:", errorText);
       throw new Error(`Failed to add module: ${response.status} - ${errorText}`);
     }
     
@@ -284,16 +294,24 @@ export default function CoursesAdminPage() {
   const [moduleFormOpen, setModuleFormOpen] = useState(false);
   const [selectedCourseForModule, setSelectedCourseForModule] = useState<string>("");
   const [moduleError, setModuleError] = useState<string>("");
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    itemsPerPage: 9
+  });
 
   // Fetch courses on component mount
   useEffect(() => {
-    loadCourses();
+    loadCourses(pagination.currentPage);
   }, []);
 
-  async function loadCourses() {
+  async function loadCourses(page = 1) {
     setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/get-stats`, {
+      const response = await fetch(`${API_BASE_URL}/get-stats?page=${page}&limit=${pagination.itemsPerPage}`, {
         headers: {
           'Authorization': `Bearer ${ADMIN_TOKEN}`,
           'Content-Type': 'application/json'
@@ -302,7 +320,10 @@ export default function CoursesAdminPage() {
       
       if (response.ok) {
         const data = await response.json();
-        const courseData = data.stats.recentCourses.map((course: any) => ({
+        
+        // Extract all courses from stats
+        const allCourses = data.stats.recentCourses || [];
+        const courseData = allCourses.map((course: any) => ({
           _id: course._id,
           title: course.title,
           price: course.price,
@@ -335,6 +356,14 @@ export default function CoursesAdminPage() {
           averageRating: data.stats.averageRating,
           totalPurchasesCount: data.stats.totalPurchasesCount
         });
+        
+        // Update pagination
+        setPagination(prev => ({
+          ...prev,
+          currentPage: page,
+          totalPages: Math.ceil(data.stats.totalCourses / prev.itemsPerPage),
+          totalItems: data.stats.totalCourses
+        }));
       }
     } catch (error) {
       console.error("Error loading courses:", error);
@@ -397,6 +426,9 @@ export default function CoursesAdminPage() {
   }
 
   function openNewModule(courseId: string) {
+    // Close the view course modal first
+    setSelectedCourse(null);
+    
     setEditingModule({
       _id: "",
       title: "",
@@ -411,6 +443,9 @@ export default function CoursesAdminPage() {
   }
 
   function openEditModule(module: ModuleItem, courseId: string) {
+    // Close the view course modal first
+    setSelectedCourse(null);
+    
     setEditingModule({ ...module, assetFile: null });
     setSelectedCourseForModule(courseId);
     setModuleError("");
@@ -421,7 +456,6 @@ export default function CoursesAdminPage() {
     e?.preventDefault();
     if (!editingModule || !selectedCourseForModule) return;
     
-    // Validation
     if (!editingModule.title.trim()) {
       setModuleError("Please enter module title");
       return;
@@ -446,39 +480,23 @@ export default function CoursesAdminPage() {
       formData.append('description', editingModule.description || '');
       formData.append('type', editingModule.type || '');
       
-      // IMPORTANT: Check file upload
       if (editingModule.assetFile) {
-        console.log("Adding file to FormData:", editingModule.assetFile.name);
         formData.append('asset', editingModule.assetFile);
       } 
       
-      // Check for link
       if (editingModule.assetLink) {
-        console.log("Adding link to FormData:", editingModule.assetLink);
         formData.append('assetLink', editingModule.assetLink);
-      }
-
-      console.log("FormData contents:");
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
       }
 
       let response;
       if (editingModule._id) {
-        // Update existing module
-        console.log(`Updating module ${editingModule._id} for course ${selectedCourseForModule}`);
         response = await updateModule(selectedCourseForModule, editingModule._id, formData);
       } else {
-        // Add new module
-        console.log(`Adding new module to course ${selectedCourseForModule}`);
         response = await addModule(selectedCourseForModule, formData);
       }
 
-      console.log("API Response:", response);
-      
       if (response.message || response.success) {
-        // Refresh the course list
-        await loadCourses();
+        await loadCourses(pagination.currentPage);
         closeModuleForm();
         alert(editingModule._id ? "Module updated successfully!" : "Module added successfully!");
       } else {
@@ -487,7 +505,6 @@ export default function CoursesAdminPage() {
     } catch (error: any) {
       console.error("Error saving module:", error);
       setModuleError(error.message || "Failed to save module. Please try again.");
-      alert("Failed to save module. Please check console for details.");
     } finally {
       setSaving(false);
     }
@@ -498,8 +515,7 @@ export default function CoursesAdminPage() {
     
     try {
       await deleteModule(courseId, moduleId);
-      // Refresh the course list
-      await loadCourses();
+      await loadCourses(pagination.currentPage);
       alert("Module deleted successfully!");
     } catch (error) {
       console.error("Error deleting module:", error);
@@ -523,6 +539,7 @@ export default function CoursesAdminPage() {
       formData.append('title', editing.title);
       formData.append('description', editing.description || '');
       formData.append('price', editing.price.toString());
+      formData.append('isPublic', editing.isPublic.toString());
       
       if (editing.discountedPrice) {
         formData.append('discountedPrice', editing.discountedPrice.toString());
@@ -532,25 +549,19 @@ export default function CoursesAdminPage() {
         formData.append('durationToComplete', editing.durationToComplete);
       }
       
-      formData.append('isPublic', editing.isPublic.toString());
-      
-      // Handle thumbnail upload
       if (editing.thumbnailFile) {
         formData.append('thumbnail', editing.thumbnailFile);
       }
 
       let response;
       if (editing._id) {
-        // Update existing course
         response = await updateCourse(editing._id, formData);
       } else {
-        // Create new course
         response = await createCourse(formData);
       }
 
       if (response.message) {
-        // Refresh the course list
-        await loadCourses();
+        await loadCourses(pagination.currentPage);
         setFormOpen(false);
         setEditing(null);
         alert(editing._id ? "Course updated successfully!" : "Course created successfully!");
@@ -568,8 +579,7 @@ export default function CoursesAdminPage() {
     
     try {
       await deleteCourse(courseId);
-
-      await loadCourses();
+      await loadCourses(pagination.currentPage);
       if (selectedCourse?._id === courseId) {
         setSelectedCourse(null);
       }
@@ -580,21 +590,30 @@ export default function CoursesAdminPage() {
     }
   }
 
-  function toggleVisibility(courseId: string) {
+  // Fixed: Proper visibility toggle with API call
+  async function toggleVisibility(courseId: string) {
     const course = courses.find(c => c._id === courseId);
     if (!course) return;
-    setCourses(prev => prev.map(p => 
-      p._id === courseId ? { ...p, isPublic: !p.isPublic, published: !p.isPublic } : p
-    ));
-    const formData = new FormData();
-    formData.append('isPublic', (!course.isPublic).toString());
     
-    updateCourse(courseId, formData).catch(error => {
-      console.error("Failed to update visibility:", error);
+    const newVisibility = !course.isPublic;
+    
+    try {
+      await toggleCourseVisibility(courseId, newVisibility);
+      
+      // Update local state
       setCourses(prev => prev.map(p => 
-        p._id === courseId ? { ...p, isPublic: course.isPublic, published: course.isPublic } : p
+        p._id === courseId ? { ...p, isPublic: newVisibility, published: newVisibility } : p
       ));
-    });
+      
+      // Update selected course if it's the same
+      if (selectedCourse?._id === courseId) {
+        setSelectedCourse(prev => prev ? { ...prev, isPublic: newVisibility, published: newVisibility } : null);
+      }
+      
+    } catch (error) {
+      console.error("Failed to update visibility:", error);
+      alert("Failed to update course visibility. Please try again.");
+    }
   }
 
   function openModuleContent(module: ModuleItem) {
@@ -605,6 +624,84 @@ export default function CoursesAdminPage() {
     } else {
       alert("No content available for this module");
     }
+  }
+
+  // Pagination handlers
+  function goToPage(page: number) {
+    if (page < 1 || page > pagination.totalPages) return;
+    loadCourses(page);
+  }
+
+  function PaginationControls() {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    let startPage = Math.max(1, pagination.currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(pagination.totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return (
+      <div className="flex items-center justify-center mt-8">
+        <nav className="flex items-center gap-2">
+          <button
+            onClick={() => goToPage(pagination.currentPage - 1)}
+            disabled={pagination.currentPage === 1}
+            className={`px-3 py-2 rounded-lg ${pagination.currentPage === 1 ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-100'}`}
+          >
+            Previous
+          </button>
+          
+          {startPage > 1 && (
+            <>
+              <button
+                onClick={() => goToPage(1)}
+                className={`px-3 py-2 rounded-lg ${1 === pagination.currentPage ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+              >
+                1
+              </button>
+              {startPage > 2 && <span className="px-2">...</span>}
+            </>
+          )}
+          
+          {pages.map(page => (
+            <button
+              key={page}
+              onClick={() => goToPage(page)}
+              className={`px-3 py-2 rounded-lg ${page === pagination.currentPage ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+            >
+              {page}
+            </button>
+          ))}
+          
+          {endPage < pagination.totalPages && (
+            <>
+              {endPage < pagination.totalPages - 1 && <span className="px-2">...</span>}
+              <button
+                onClick={() => goToPage(pagination.totalPages)}
+                className={`px-3 py-2 rounded-lg ${pagination.totalPages === pagination.currentPage ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-100'}`}
+              >
+                {pagination.totalPages}
+              </button>
+            </>
+          )}
+          
+          <button
+            onClick={() => goToPage(pagination.currentPage + 1)}
+            disabled={pagination.currentPage === pagination.totalPages}
+            className={`px-3 py-2 rounded-lg ${pagination.currentPage === pagination.totalPages ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-100'}`}
+          >
+            Next
+          </button>
+        </nav>
+      </div>
+    );
   }
 
   /* UI */
@@ -711,165 +808,187 @@ export default function CoursesAdminPage() {
 
         {/* Courses Grid/List */}
         {!loading && viewMode === "grid" && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map((c) => (
-              <div
-                key={c._id}
-                className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-              >
-                {/* Course Image */}
-                <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={c.courseThumbnail || PLACEHOLDER}
-                    alt={c.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                  
-                  {/* Status Badges */}
-                  <div className="absolute top-4 left-4 flex gap-2">
-                    <Pill className={`${c.published ? "bg-emerald-500 text-white" : "bg-slate-600 text-white"}`}>
-                      {c.published ? "Published" : "Draft"}
-                    </Pill>
-                    <Pill className={`${c.isPublic ? "bg-blue-500 text-white" : "bg-slate-500 text-white"}`}>
-                      {c.isPublic ? "Public" : "Private"}
-                    </Pill>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filtered.map((c) => (
+                <div
+                  key={c._id}
+                  className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                >
+                  {/* Course Image */}
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={c.courseThumbnail || PLACEHOLDER}
+                      alt={c.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                    
+                    {/* Status Badges */}
+                    <div className="absolute top-4 left-4 flex gap-2">
+                      <Pill className={`${c.published ? "bg-emerald-500 text-white" : "bg-slate-600 text-white"}`}>
+                        {c.published ? "Published" : "Draft"}
+                      </Pill>
+                      <Pill className={`${c.isPublic ? "bg-blue-500 text-white" : "bg-slate-500 text-white"}`}>
+                        {c.isPublic ? "Public" : "Private"}
+                      </Pill>
+                    </div>
+
+                    {/* Price Tag */}
+                    <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
+                      <div className="text-sm text-slate-500">Price</div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl font-bold text-slate-900">${c.price.toFixed(2)}</span>
+                        {c.discountedPrice && (
+                          <span className="text-sm text-slate-400 line-through">${c.discountedPrice.toFixed(2)}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Price Tag */}
-                  <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
-                    <div className="text-sm text-slate-500">Price</div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl font-bold text-slate-900">${c.price.toFixed(2)}</span>
-                      {c.discountedPrice && (
-                        <span className="text-sm text-slate-400 line-through">${c.discountedPrice.toFixed(2)}</span>
-                      )}
+                  {/* Course Content */}
+                  <div className="p-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <h3 className="text-lg font-bold text-slate-900 line-clamp-1">{c.title}</h3>
+                      <div className="flex items-center gap-1 text-amber-500">
+                        <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span className="text-sm font-semibold">{c.rating?.toFixed(1) || "0.0"}</span>
+                      </div>
+                    </div>
+
+                    <p className="text-slate-600 text-sm mb-4 line-clamp-2">{c.description}</p>
+
+                    {/* Meta Info */}
+                    <div className="flex items-center justify-between text-sm text-slate-500 mb-4">
+                      <div className="flex items-center gap-4">
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {c.durationToComplete || "—"}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                          </svg>
+                          {c.modules?.length || 0} modules
+                        </span>
+                      </div>
+                      <span>{new Date(c.createdAt).toLocaleDateString()}</span>
+                    </div>
+
+                    {/* Students */}
+                    <div className="mb-4 text-sm text-slate-700">
+                      <span className="font-medium">{c.purchasedByHowMuch || 0}</span> students enrolled
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-4 border-t border-slate-100">
+                      <button
+                        onClick={() => setSelectedCourse(c)}
+                        className="flex-1 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-medium transition"
+                      >
+                        View Details
+                      </button>
+                      <button
+                        onClick={() => toggleVisibility(c._id)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition ${c.isPublic ? 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700' : 'bg-green-50 hover:bg-green-100 text-green-700'}`}
+                      >
+                        {c.isPublic ? 'Make Private' : 'Make Public'}
+                      </button>
+                      <button
+                        onClick={() => openEditCourse(c)}
+                        className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => onDelete(c._id)}
+                        className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </div>
-
-                {/* Course Content */}
-                <div className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-lg font-bold text-slate-900 line-clamp-1">{c.title}</h3>
-                    <div className="flex items-center gap-1 text-amber-500">
-                      <svg className="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <span className="text-sm font-semibold">{c.rating?.toFixed(1) || "0.0"}</span>
-                    </div>
-                  </div>
-
-                  <p className="text-slate-600 text-sm mb-4 line-clamp-2">{c.description}</p>
-
-                  {/* Meta Info */}
-                  <div className="flex items-center justify-between text-sm text-slate-500 mb-4">
-                    <div className="flex items-center gap-4">
-                      <span className="flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        {c.durationToComplete || "—"}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                        {c.modules?.length || 0} modules
-                      </span>
-                    </div>
-                    <span>{new Date(c.createdAt).toLocaleDateString()}</span>
-                  </div>
-
-                  {/* Students */}
-                  <div className="mb-4 text-sm text-slate-700">
-                    <span className="font-medium">{c.purchasedByHowMuch || 0}</span> students enrolled
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex gap-2 pt-4 border-t border-slate-100">
-                    <button
-                      onClick={() => setSelectedCourse(c)}
-                      className="flex-1 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-medium transition"
-                    >
-                      View Details
-                    </button>
-                    <button
-                      onClick={() => openEditCourse(c)}
-                      className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium transition"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => onDelete(c._id)}
-                      className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && <PaginationControls />}
+          </>
         )}
 
         {!loading && viewMode === "list" && (
-          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
-            {filtered.map((c) => (
-              <div
-                key={c._id}
-                className="p-5 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-24 h-16 rounded-lg overflow-hidden flex-shrink-0">
-                    <img src={c.courseThumbnail || PLACEHOLDER} alt={c.title} className="w-full h-full object-cover" />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-bold text-slate-900">{c.title}</h3>
-                      <div className="flex items-center gap-4">
-                        <span className="text-lg font-bold text-slate-900">${c.price.toFixed(2)}</span>
-                        <div className="flex items-center gap-2">
-                          <Pill className={`${c.published ? "bg-emerald-500 text-white" : "bg-slate-500 text-white"}`}>
-                            {c.published ? "Published" : "Draft"}
-                          </Pill>
-                          <Pill className={`${c.isPublic ? "bg-blue-500 text-white" : "bg-slate-600 text-white"}`}>
-                            {c.isPublic ? "Public" : "Private"}
-                          </Pill>
+          <>
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              {filtered.map((c) => (
+                <div
+                  key={c._id}
+                  className="p-5 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-24 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                      <img src={c.courseThumbnail || PLACEHOLDER} alt={c.title} className="w-full h-full object-cover" />
+                    </div>
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-bold text-slate-900">{c.title}</h3>
+                        <div className="flex items-center gap-4">
+                          <span className="text-lg font-bold text-slate-900">${c.price.toFixed(2)}</span>
+                          <div className="flex items-center gap-2">
+                            <Pill className={`${c.published ? "bg-emerald-500 text-white" : "bg-slate-500 text-white"}`}>
+                              {c.published ? "Published" : "Draft"}
+                            </Pill>
+                            <Pill className={`${c.isPublic ? "bg-blue-500 text-white" : "bg-slate-600 text-white"}`}>
+                              {c.isPublic ? "Public" : "Private"}
+                            </Pill>
+                          </div>
                         </div>
+                      </div>
+                      
+                      <p className="text-slate-600 text-sm mb-2 line-clamp-1">{c.description}</p>
+                      
+                      <div className="flex items-center gap-4 text-sm text-slate-500">
+                        <span>⭐ {c.rating?.toFixed(1) || "0.0"}</span>
+                        <span>⏱️ {c.durationToComplete || "—"}</span>
+                        <span>📚 {c.modules?.length || 0} modules</span>
+                        <span>👥 {c.purchasedByHowMuch || 0} students</span>
+                        <span>📅 {new Date(c.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                     
-                    <p className="text-slate-600 text-sm mb-2 line-clamp-1">{c.description}</p>
-                    
-                    <div className="flex items-center gap-4 text-sm text-slate-500">
-                      <span>⭐ {c.rating?.toFixed(1) || "0.0"}</span>
-                      <span>⏱️ {c.durationToComplete || "—"}</span>
-                      <span>📚 {c.modules?.length || 0} modules</span>
-                      <span>👥 {c.purchasedByHowMuch || 0} students</span>
-                      <span>📅 {new Date(c.createdAt).toLocaleDateString()}</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => toggleVisibility(c._id)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${c.isPublic ? 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700' : 'bg-green-50 hover:bg-green-100 text-green-700'}`}
+                      >
+                        {c.isPublic ? 'Private' : 'Public'}
+                      </button>
+                      <button
+                        onClick={() => openEditCourse(c)}
+                        className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setSelectedCourse(c)}
+                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition"
+                      >
+                        View
+                      </button>
                     </div>
                   </div>
-                  
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => openEditCourse(c)}
-                      className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium transition"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => setSelectedCourse(c)}
-                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition"
-                    >
-                      View
-                    </button>
-                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && <PaginationControls />}
+          </>
         )}
 
         {!loading && filtered.length === 0 && (
@@ -957,7 +1076,7 @@ export default function CoursesAdminPage() {
                       min="0"
                       value={editing.price}
                       onChange={(e) => setEditing({ ...editing, price: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-4 py-3 text-black text-black bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      className="w-full px-4 py-3 text-black bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                       required
                     />
                   </div>
@@ -970,7 +1089,7 @@ export default function CoursesAdminPage() {
                       min="0"
                       value={editing.discountedPrice || ""}
                       onChange={(e) => setEditing({ ...editing, discountedPrice: e.target.value ? parseFloat(e.target.value) : undefined })}
-                      className="w-full px-4 text-black text-black py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      className="w-full px-4 text-black py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                     />
                   </div>
 
@@ -1089,7 +1208,7 @@ export default function CoursesAdminPage() {
 
       {/* ---------- Module Form Modal ---------- */}
       {moduleFormOpen && editingModule && (
-        <div className="fixed inset-0 z-50 flex  items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModuleForm} />
           <form
             onSubmit={submitModuleForm}
@@ -1154,8 +1273,6 @@ export default function CoursesAdminPage() {
                     <option value="">Select type</option>
                     <option value="video">video</option>
                     <option value="pdf">pdf</option>
-                    {/* <option value="text">Text Content</option>
-                    <option value="quiz">Quiz</option> */}
                   </select>
                 </div>
 
@@ -1231,7 +1348,7 @@ export default function CoursesAdminPage() {
                           setEditingModule({ ...editingModule, assetLink: e.target.value, assetFile: null });
                           setModuleError("");
                         }}
-                        className="w-full px-4 py-3 bg-white txet-black border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                        className="w-full px-4 py-3 bg-white text-black border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                         placeholder="https://example.com/video"
                       />
                     </div>
@@ -1466,6 +1583,15 @@ export default function CoursesAdminPage() {
                             <span className="text-lg font-semibold">{selectedCourse.rating?.toFixed(1) || "0.0"}</span>
                           </div>
                         </div>
+                      </div>
+
+                      <div className="pt-4 border-t border-slate-200">
+                        <button
+                          onClick={() => toggleVisibility(selectedCourse._id)}
+                          className={`w-full py-3 rounded-lg font-medium transition ${selectedCourse.isPublic ? 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200' : 'bg-green-50 hover:bg-green-100 text-green-700 border border-green-200'}`}
+                        >
+                          {selectedCourse.isPublic ? 'Make Course Private' : 'Make Course Public'}
+                        </button>
                       </div>
                     </div>
                   </div>

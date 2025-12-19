@@ -4,8 +4,16 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { 
-  Users, Award, BookOpen, FileText, Newspaper, 
-  Settings, LogOut, ChevronRight, Sparkles
+  Users, 
+  Award, 
+  BookOpen, 
+  FileText, 
+  Newspaper, 
+  Bell,
+  Image,
+  Settings, 
+  LogOut, 
+  ChevronRight
 } from "lucide-react";
 
 const items = [
@@ -14,6 +22,8 @@ const items = [
   { key: "courses", label: "Courses", href: "/dashboard/courses", icon: BookOpen },
   { key: "certificates", label: "Certificates", href: "/dashboard/certificate", icon: FileText },
   { key: "news", label: "News", href: "/dashboard/news", icon: Newspaper },
+  { key: "notification", label: "Notification", href: "/dashboard/notification", icon: Bell },
+  { key: "gallery", label: "Gallery", href: "/dashboard/galleryImag", icon: Image },
   { key: "settings", label: "Settings", href: "/dashboard/setting", icon: Settings },
 ];
 

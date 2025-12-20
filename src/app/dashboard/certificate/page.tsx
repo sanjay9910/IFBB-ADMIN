@@ -1,19 +1,24 @@
 "use client";
 
 import React, { useCallback, useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 
 // API configuration
 const API_CONFIG = {
   baseUrl: "https://ifbb-1.onrender.com/api",
   uploadEndpoint: "/admin/certificates",
   fetchEndpoint: "/certificates",
-  deleteEndpoint: "/admin/certificates" // Assuming DELETE /admin/certificates/:id
+  deleteEndpoint: "/admin/certificates",
 };
 
 // Available categories
 const CATEGORIES = ["coach", "athlete", "judge", "trainer", "other"];
 
 export default function CertificateManager() {
+  const router = useRouter();
+  const { token, isAuthenticated, logout } = useAuth();
+
   // State management
   const [files, setFiles] = useState([]);
   const [uploadedCertificates, setUploadedCertificates] = useState([]);
@@ -24,43 +29,24 @@ export default function CertificateManager() {
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  const [authToken, setAuthToken] = useState(null);
-  const [showAuthInput, setShowAuthInput] = useState(false);
-  
+
   const inputRef = useRef(null);
 
   // Generate unique ID
   const uid = () => Math.random().toString(36).slice(2, 9);
 
-  // Authentication setup
+  // Check authentication on mount
   useEffect(() => {
-    const savedToken = localStorage.getItem('ifbb_auth_token');
-    if (savedToken) {
-      setAuthToken(savedToken);
-    } else {
-      setShowAuthInput(true);
+    if (!isAuthenticated || !token) {
+      router.replace("/auth/login");
     }
-  }, []);
-
-  const saveAuthToken = (token) => {
-    localStorage.setItem('ifbb_auth_token', token);
-    setAuthToken(token);
-    setShowAuthInput(false);
-    setSuccess("Authentication token saved successfully!");
-  };
-
-  const logout = () => {
-    localStorage.removeItem('ifbb_auth_token');
-    setAuthToken(null);
-    setShowAuthInput(true);
-    setSuccess("Logged out successfully");
-  };
+  }, [isAuthenticated, token, router]);
 
   // Upload file to server
   const uploadFileToServer = async (file, category, onProgress) => {
     try {
-      if (!authToken) {
-        throw new Error("Authentication required. Please add your token.");
+      if (!token) {
+        throw new Error("Authentication required. Please login again.");
       }
 
       const formData = new FormData();
@@ -76,11 +62,13 @@ export default function CertificateManager() {
         onProgress(pct);
       }, 160);
 
+      console.log("🔵 Uploading certificate:", { fileName: file.name, category, tokenLength: token.length });
+
       const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.uploadEndpoint}`, {
         method: "POST",
         body: formData,
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          "Authorization": `Bearer ${token}`,
         },
       });
 
@@ -88,32 +76,29 @@ export default function CertificateManager() {
       onProgress(100);
 
       if (response.status === 401) {
-        throw new Error("Authentication failed (401). Token may be invalid or expired.");
+        setError("Session expired. Please login again.");
+        router.replace("/auth/login");
+        throw new Error("Authentication failed (401)");
       }
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Upload failed: ${response.status} ${response.statusText} - ${errorText}`);
+        throw new Error(`Upload failed: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
-      
+      console.log("✅ Upload successful:", result);
+
       return {
         success: true,
         data: result.data || result,
-        url: result.fileUrl || result.data?.fileUrl || URL.createObjectURL(file)
+        url: result.fileUrl || result.data?.fileUrl || URL.createObjectURL(file),
       };
     } catch (err) {
-      console.error("Upload error:", err);
-      
-      if (err.message.includes("401") || err.message.includes("Authentication")) {
-        setError(err.message + " - Please update your authentication token.");
-        setShowAuthInput(true);
-      }
-      
+      console.error("❌ Upload error:", err);
       return {
         success: false,
-        error: err.message || "Upload failed"
+        error: err.message || "Upload failed",
       };
     }
   };
@@ -123,36 +108,39 @@ export default function CertificateManager() {
     try {
       setLoading(true);
       setError(null);
-      
+
+      console.log("🔵 Fetching certificates for:", category);
+
       const response = await fetch(
         `${API_CONFIG.baseUrl}${API_CONFIG.fetchEndpoint}?category=${category}`
       );
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch: ${response.status}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.message || "Failed to fetch certificates");
       }
-      
+
       // Transform API response to match our UI structure
       const certificates = (result.data || []).map((cert, index) => ({
         id: cert._id || `cert-${index}-${Date.now()}`,
-        name: cert.fileUrl?.split('/').pop() || `certificate-${index}`,
+        name: cert.fileUrl?.split("/").pop() || `certificate-${index}`,
         url: cert.fileUrl,
         category: cert.category || category,
         uploadedAt: cert.createdAt || new Date().toISOString(),
         publicId: cert.publicId,
-        primary: index === 0
+        primary: index === 0,
       }));
-      
+
       setUploadedCertificates(certificates);
+      console.log("✅ Certificates fetched:", certificates.length);
       return certificates;
     } catch (err) {
-      console.error("Fetch error:", err);
+      console.error("❌ Fetch error:", err);
       setError(`Failed to load certificates: ${err.message}`);
       return [];
     } finally {
@@ -162,9 +150,9 @@ export default function CertificateManager() {
 
   // Delete certificate
   const deleteCertificate = async (certificateId, publicId) => {
-    if (!authToken) {
+    if (!token) {
       setError("Authentication required to delete certificates.");
-      setShowAuthInput(true);
+      router.replace("/auth/login");
       return false;
     }
 
@@ -174,31 +162,40 @@ export default function CertificateManager() {
 
     try {
       setDeletingId(certificateId);
-      
-      // First try with publicId in body
+
+      console.log("🔵 Deleting certificate:", { certificateId, publicId });
+
       const deleteBody = publicId ? { publicId } : { id: certificateId };
-      
-      const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.deleteEndpoint}/${certificateId}`, {
-        method: "DELETE",
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(deleteBody)
-      });
+
+      const response = await fetch(
+        `${API_CONFIG.baseUrl}${API_CONFIG.deleteEndpoint}/${certificateId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(deleteBody),
+        }
+      );
 
       if (response.status === 401) {
-        throw new Error("Authentication failed (401). Token may be invalid or expired.");
+        setError("Session expired. Please login again.");
+        router.replace("/auth/login");
+        throw new Error("Authentication failed (401)");
       }
 
       if (!response.ok) {
-        // If first attempt fails, try without body (URL parameter only)
-        const retryResponse = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.deleteEndpoint}/${certificateId}`, {
-          method: "DELETE",
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-          },
-        });
+        // Retry without body
+        const retryResponse = await fetch(
+          `${API_CONFIG.baseUrl}${API_CONFIG.deleteEndpoint}/${certificateId}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+            },
+          }
+        );
 
         if (!retryResponse.ok) {
           const errorText = await retryResponse.text();
@@ -207,15 +204,18 @@ export default function CertificateManager() {
       }
 
       // Remove from state
-      setUploadedCertificates(prev => prev.filter(cert => cert.id !== certificateId));
+      setUploadedCertificates((prev) =>
+        prev.filter((cert) => cert.id !== certificateId)
+      );
       setSuccess("Certificate deleted successfully!");
-      
+
       // Refresh list
       fetchCertificatesByCategory(selectedCategory);
-      
+
+      console.log("✅ Certificate deleted successfully");
       return true;
     } catch (err) {
-      console.error("Delete error:", err);
+      console.error("❌ Delete error:", err);
       setError(`Failed to delete certificate: ${err.message}`);
       return false;
     } finally {
@@ -229,24 +229,27 @@ export default function CertificateManager() {
   }, [selectedCategory]);
 
   // File selection handler
-  const onFilesSelected = useCallback((selectedFiles) => {
-    const arr = Array.from(selectedFiles).map((file) => ({
-      id: uid(),
-      file,
-      url: URL.createObjectURL(file),
-      progress: 0,
-      uploaded: false,
-      uploadedUrl: null,
-      error: null,
-      category: selectedCategory,
-      primary: false,
-      name: file.name,
-      size: file.size
-    }));
-    
-    setFiles((prev) => [...prev, ...arr]);
-    setSuccess(null);
-  }, [selectedCategory]);
+  const onFilesSelected = useCallback(
+    (selectedFiles) => {
+      const arr = Array.from(selectedFiles).map((file) => ({
+        id: uid(),
+        file,
+        url: URL.createObjectURL(file),
+        progress: 0,
+        uploaded: false,
+        uploadedUrl: null,
+        error: null,
+        category: selectedCategory,
+        primary: false,
+        name: file.name,
+        size: file.size,
+      }));
+
+      setFiles((prev) => [...prev, ...arr]);
+      setSuccess(null);
+    },
+    [selectedCategory]
+  );
 
   // Drag and drop handlers
   const onDrop = useCallback(
@@ -272,14 +275,14 @@ export default function CertificateManager() {
 
   // Upload all files
   const startUploadAll = async () => {
-    if (!authToken) {
-      setError("Authentication required. Please add your API token.");
-      setShowAuthInput(true);
+    if (!token) {
+      setError("Authentication required. Please login again.");
+      router.replace("/auth/login");
       return;
     }
 
     const toUpload = files.filter((f) => !f.uploaded && !f.error);
-    
+
     if (toUpload.length === 0) {
       setError("No files to upload");
       return;
@@ -290,9 +293,7 @@ export default function CertificateManager() {
 
     const uploadPromises = toUpload.map(async (fileItem) => {
       setFiles((prev) =>
-        prev.map((p) =>
-          p.id === fileItem.id ? { ...p, progress: 1 } : p
-        )
+        prev.map((p) => (p.id === fileItem.id ? { ...p, progress: 1 } : p))
       );
 
       try {
@@ -317,12 +318,12 @@ export default function CertificateManager() {
                     progress: 100,
                     uploaded: true,
                     uploadedUrl: result.url,
-                    error: null
+                    error: null,
                   }
                 : p
             )
           );
-          
+
           return { success: true, file: fileItem.name };
         } else {
           setFiles((prev) =>
@@ -350,13 +351,15 @@ export default function CertificateManager() {
     setUploading(false);
 
     const successful = results.filter((r) => r.success).length;
-    
+
     if (successful > 0) {
-      setSuccess(`Successfully uploaded ${successful} of ${toUpload.length} files`);
-      
+      setSuccess(
+        `Successfully uploaded ${successful} of ${toUpload.length} files`
+      );
+
       // Refresh certificates list
       fetchCertificatesByCategory(selectedCategory);
-      
+
       // Clear uploaded files after 2 seconds
       setTimeout(() => {
         setFiles((prev) => prev.filter((f) => !f.uploaded));
@@ -383,10 +386,10 @@ export default function CertificateManager() {
     setFiles((prev) => {
       const idx = prev.findIndex((p) => p.id === id);
       if (idx === -1) return prev;
-      
+
       const newIdx = idx + direction;
       if (newIdx < 0 || newIdx >= prev.length) return prev;
-      
+
       const copy = [...prev];
       const [item] = copy.splice(idx, 1);
       copy.splice(newIdx, 0, item);
@@ -413,116 +416,68 @@ export default function CertificateManager() {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
+
+  // Show loading while checking authentication
+  if (!isAuthenticated || !token) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-10 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Authentication Modal */}
-        {showAuthInput && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-6 max-w-md w-full">
-              <h3 className="text-lg font-bold text-slate-900 mb-2">
-                🔐 Authentication Required
-              </h3>
-              <p className="text-slate-600 mb-4">
-                Admin operations require authentication. Please enter your authorization token.
-              </p>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Authorization Token
-                </label>
-                <input
-                  type="password"
-                  placeholder="Bearer token"
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && e.target.value.trim()) {
-                      saveAuthToken(e.target.value.trim());
-                    }
-                  }}
-                />
-                <p className="text-xs text-slate-500 mt-2">
-                  Token will be saved in browser's localStorage
-                </p>
-              </div>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    const token = document.querySelector('input[type="password"]').value.trim();
-                    if (token) saveAuthToken(token);
-                  }}
-                  className="flex-1 bg-sky-600 text-white py-2 rounded-lg hover:bg-sky-700"
-                >
-                  Save Token
-                </button>
-                <button
-                  onClick={() => setShowAuthInput(false)}
-                  className="flex-1 border border-slate-300 text-slate-700 py-2 rounded-lg hover:bg-slate-50"
-                >
-                  Skip (View Only)
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Header with Auth Status */}
-        <div className="text-center mb-10">
+        {/* <div className="text-center mb-10">
           <div className="flex justify-between items-center mb-6">
             <div></div>
             <div className="flex items-center gap-3">
-              {authToken ? (
-                <>
-                  <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1 rounded-full">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                    <span className="text-sm text-emerald-700">Authenticated</span>
-                  </div>
-                  <button
-                    onClick={logout}
-                    className="text-sm text-red-600 hover:text-red-700"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <button
-                  onClick={() => setShowAuthInput(true)}
-                  className="text-sm bg-amber-50 text-amber-700 px-3 py-1 rounded-full hover:bg-amber-100"
-                >
-                  ⚠️ Add Token (Upload/Delete)
-                </button>
-              )}
+              <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1 rounded-full">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                <span className="text-sm text-emerald-700">Authenticated</span>
+              </div>
+              <button
+                onClick={logout}
+                className="text-sm text-red-600 hover:text-red-700 font-medium"
+              >
+                Logout
+              </button>
             </div>
           </div>
-          
+
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             📜 Certificate Management
           </h1>
           <p className="text-lg text-slate-600 max-w-3xl mx-auto">
-            {authToken 
-              ? "Upload, view, and manage certificates"
-              : "View certificates (upload/delete requires authentication)"}
+            Upload, view, and manage certificates with ease
           </p>
-        </div>
+        </div> */}
 
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
           {/* Top controls section */}
           <div className="p-8 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">Certificate Dashboard</h2>
+                <h2 className="text-2xl font-bold text-slate-900">
+                  Certificate Dashboard
+                </h2>
                 <p className="mt-2 text-slate-600">
-                  Currently viewing: <span className="font-semibold capitalize">{selectedCategory}</span> certificates
+                  Currently viewing:{" "}
+                  <span className="font-semibold capitalize">{selectedCategory}</span>{" "}
+                  certificates
                 </p>
               </div>
 
@@ -552,33 +507,53 @@ export default function CertificateManager() {
                 <div className="flex items-end gap-3">
                   <button
                     onClick={() => inputRef.current?.click()}
-                    disabled={!authToken}
-                    className={`inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-                      authToken
-                        ? "bg-gradient-to-r from-sky-600 to-sky-500 text-white hover:from-sky-700 hover:to-sky-600 shadow-lg shadow-sky-100"
-                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                    }`}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-sky-600 to-sky-500 text-white hover:from-sky-700 hover:to-sky-600 shadow-lg shadow-sky-100"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 4v16m8-8H4"
+                      />
                     </svg>
                     Add Certificates
                   </button>
 
                   <button
                     onClick={startUploadAll}
-                    disabled={files.length === 0 || uploading || !authToken}
+                    disabled={files.length === 0 || uploading}
                     className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                      (files.length === 0 || uploading || !authToken)
+                      files.length === 0 || uploading
                         ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                         : "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:from-emerald-700 hover:to-emerald-600 shadow-lg shadow-emerald-100"
                     }`}
                   >
                     {uploading ? (
                       <span className="flex items-center gap-2">
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        <svg
+                          className="animate-spin h-4 w-4"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
                         </svg>
                         Uploading...
                       </span>
@@ -592,16 +567,42 @@ export default function CertificateManager() {
 
             {/* Status messages */}
             {(error || success) && (
-              <div className={`mt-4 p-4 rounded-lg ${error ? "bg-red-50 border border-red-200" : "bg-emerald-50 border border-emerald-200"}`}>
+              <div
+                className={`mt-4 p-4 rounded-lg ${
+                  error
+                    ? "bg-red-50 border border-red-200"
+                    : "bg-emerald-50 border border-emerald-200"
+                }`}
+              >
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-full ${error ? "bg-red-100" : "bg-emerald-100"}`}>
+                  <div
+                    className={`p-2 rounded-full ${
+                      error ? "bg-red-100" : "bg-emerald-100"
+                    }`}
+                  >
                     {error ? (
-                      <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      <svg
+                        className="w-5 h-5 text-red-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     ) : (
-                      <svg className="w-5 h-5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      <svg
+                        className="w-5 h-5 text-emerald-600"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
                       </svg>
                     )}
                   </div>
@@ -651,12 +652,24 @@ export default function CertificateManager() {
               <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                 <div className="flex-1 text-center md:text-left">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-sky-100 to-sky-50 mb-4">
-                    <svg className="w-8 h-8 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    <svg
+                      className="w-8 h-8 text-sky-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
                     </svg>
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">
-                    {dragActive ? "Drop your files here" : "Drag & drop certificate images"}
+                    {dragActive
+                      ? "Drop your files here"
+                      : "Drag & drop certificate images"}
                   </h3>
                   <p className="text-slate-600 mb-4">
                     Drop images or{" "}
@@ -686,9 +699,15 @@ export default function CertificateManager() {
 
                 <div className="bg-gradient-to-br from-slate-50 to-white p-6 rounded-xl border border-slate-200 shadow-sm">
                   <div className="text-center">
-                    <div className="text-sm font-medium text-slate-500 mb-1">Selected for Upload</div>
-                    <div className="text-4xl font-bold text-slate-900 mb-2">{files.length}</div>
-                    <div className="text-xs text-slate-500">in {selectedCategory} category</div>
+                    <div className="text-sm font-medium text-slate-500 mb-1">
+                      Selected for Upload
+                    </div>
+                    <div className="text-4xl font-bold text-slate-900 mb-2">
+                      {files.length}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      in {selectedCategory} category
+                    </div>
                   </div>
                 </div>
               </div>
@@ -707,7 +726,9 @@ export default function CertificateManager() {
               {/* Upload Queue */}
               <div className="bg-gradient-to-b from-white to-slate-50 rounded-xl border border-slate-200 p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-bold text-slate-900">Upload Queue</h3>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Upload Queue
+                  </h3>
                   {files.length > 0 && (
                     <button
                       onClick={clearAll}
@@ -722,7 +743,8 @@ export default function CertificateManager() {
                   <div className="text-center py-10">
                     <div className="text-slate-400 mb-3">No files in queue</div>
                     <p className="text-sm text-slate-500">
-                      Add certificates using drag & drop or the "Add Certificates" button
+                      Add certificates using drag & drop or the "Add Certificates"
+                      button
                     </p>
                   </div>
                 ) : (
@@ -801,7 +823,9 @@ export default function CertificateManager() {
                                     : `${fileItem.progress}%`}
                                 </span>
                                 {fileItem.error && (
-                                  <span className="text-red-600 text-xs">{fileItem.error}</span>
+                                  <span className="text-red-600 text-xs">
+                                    {fileItem.error}
+                                  </span>
                                 )}
                               </div>
                               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -822,14 +846,18 @@ export default function CertificateManager() {
                             <div className="flex items-center gap-2 mt-3">
                               <button
                                 onClick={() => setPrimary(fileItem.id)}
-                                disabled={fileItem.primary || fileItem.uploaded}
+                                disabled={
+                                  fileItem.primary || fileItem.uploaded
+                                }
                                 className={`px-3 py-1.5 text-sm rounded-lg ${
                                   fileItem.primary || fileItem.uploaded
                                     ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                                     : "bg-sky-600 text-white hover:bg-sky-700"
                                 }`}
                               >
-                                {fileItem.primary ? "Primary" : "Set Primary"}
+                                {fileItem.primary
+                                  ? "Primary"
+                                  : "Set Primary"}
                               </button>
                               <button
                                 onClick={() => removeFile(fileItem.id)}
@@ -864,16 +892,41 @@ export default function CertificateManager() {
                   >
                     {loading ? (
                       <>
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        <svg
+                          className="animate-spin h-4 w-4"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
                         </svg>
                         Loading...
                       </>
                     ) : (
                       <>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
                         </svg>
                         Refresh
                       </>
@@ -884,16 +937,33 @@ export default function CertificateManager() {
                 {loading && uploadedCertificates.length === 0 ? (
                   <div className="flex items-center justify-center py-10">
                     <div className="text-center">
-                      <svg className="animate-spin h-8 w-8 text-sky-600 mx-auto mb-4" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <svg
+                        className="animate-spin h-8 w-8 text-sky-600 mx-auto mb-4"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
                       <p className="text-slate-500">Loading certificates...</p>
                     </div>
                   </div>
                 ) : uploadedCertificates.length === 0 ? (
                   <div className="text-center py-10">
-                    <div className="text-slate-400 mb-3">No certificates found</div>
+                    <div className="text-slate-400 mb-3">
+                      No certificates found
+                    </div>
                     <p className="text-sm text-slate-500">
                       Upload certificates to see them here
                     </p>
@@ -916,7 +986,8 @@ export default function CertificateManager() {
                                   className="max-w-full max-h-full object-cover"
                                   onError={(e) => {
                                     e.target.onerror = null;
-                                    e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'%3E%3C/circle%3E%3Cpolyline points='21 15 16 10 5 21'%3E%3C/polyline%3E%3C/svg%3E";
+                                    e.target.src =
+                                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'%3E%3C/circle%3E%3Cpolyline points='21 15 16 10 5 21'%3E%3C/polyline%3E%3C/svg%3E";
                                   }}
                                 />
                                 <a
@@ -927,16 +998,36 @@ export default function CertificateManager() {
                                   title="View full size"
                                 >
                                   <div className="opacity-0 group-hover:opacity-100 bg-white/90 p-2 rounded-full">
-                                    <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                    <svg
+                                      className="w-4 h-4 text-slate-700"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
+                                      />
                                     </svg>
                                   </div>
                                 </a>
                               </>
                             ) : (
                               <div className="text-slate-400">
-                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                <svg
+                                  className="w-8 h-8"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                  />
                                 </svg>
                               </div>
                             )}
@@ -959,7 +1050,10 @@ export default function CertificateManager() {
                                 </div>
                                 {cert.publicId && (
                                   <div className="mt-2">
-                                    <p className="text-xs text-slate-400 truncate" title={cert.publicId}>
+                                    <p
+                                      className="text-xs text-slate-400 truncate"
+                                      title={cert.publicId}
+                                    >
                                       ID: {cert.publicId.substring(0, 20)}...
                                     </p>
                                   </div>
@@ -976,42 +1070,76 @@ export default function CertificateManager() {
                                     className="p-1.5 text-slate-600 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
                                     title="View certificate"
                                   >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    <svg
+                                      className="w-4 h-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                                      />
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                                      />
                                     </svg>
                                   </a>
-                                  
+
                                   <button
-                                    onClick={() => deleteCertificate(cert.id, cert.publicId)}
-                                    disabled={!authToken || deletingId === cert.id}
+                                    onClick={() =>
+                                      deleteCertificate(cert.id, cert.publicId)
+                                    }
+                                    disabled={deletingId === cert.id}
                                     className={`p-1.5 rounded-lg transition-colors ${
-                                      !authToken
-                                        ? "text-slate-300 cursor-not-allowed"
-                                        : deletingId === cert.id
+                                      deletingId === cert.id
                                         ? "text-amber-600 bg-amber-50"
                                         : "text-red-600 hover:text-red-700 hover:bg-red-50"
                                     }`}
                                     title="Delete certificate"
                                   >
                                     {deletingId === cert.id ? (
-                                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                      <svg
+                                        className="animate-spin h-4 w-4"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <circle
+                                          className="opacity-25"
+                                          cx="12"
+                                          cy="12"
+                                          r="10"
+                                          stroke="currentColor"
+                                          strokeWidth="4"
+                                          fill="none"
+                                        />
+                                        <path
+                                          className="opacity-75"
+                                          fill="currentColor"
+                                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                        />
                                       </svg>
                                     ) : (
-                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth="2"
+                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        />
                                       </svg>
                                     )}
                                   </button>
                                 </div>
-                                
-                                {!authToken && (
-                                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                                    Login to delete
-                                  </span>
-                                )}
                               </div>
                             </div>
                           </div>
@@ -1028,7 +1156,10 @@ export default function CertificateManager() {
                       <div className="text-sm text-slate-600">
                         Showing {uploadedCertificates.length} certificate
                         {uploadedCertificates.length !== 1 ? "s" : ""} in{" "}
-                        <span className="font-semibold text-slate-900 capitalize">{selectedCategory}</span> category
+                        <span className="font-semibold text-slate-900 capitalize">
+                          {selectedCategory}
+                        </span>{" "}
+                        category
                       </div>
                       <div className="text-xs text-slate-500">
                         Last updated: {new Date().toLocaleTimeString()}

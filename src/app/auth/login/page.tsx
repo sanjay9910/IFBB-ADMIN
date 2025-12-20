@@ -1,43 +1,37 @@
-"use client";
+'use client';
 
-import { useDispatch, useSelector } from "react-redux";
-import { adminLogin } from "@/features/auth/authSlice";
-import type { AppDispatch, RootState } from "@/store/store";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { useEffect, useState } from "react";
-import Img from '../../../../public/images/TrainerImg2.jpg'
-import ImgLogo from '../../../../public/images/Logo.png'
+import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import Img from '../../../../public/images/TrainerImg2.jpg';
+import ImgLogo from '../../../../public/images/Logo.png';
 
 export default function LoginPage() {
-  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+  const { loading, error, isAuthenticated, login } = useAuth();
 
-  const { loading, error, isAuthenticated } = useSelector(
-    (state: RootState) => state.auth
-  );
-
-  const [email, setEmail] = useState("admin@gmail.com");
-  const [password, setPassword] = useState("12345678");
+  const [email, setEmail] = useState('admin@gmail.com');
+  const [password, setPassword] = useState('12345678');
 
   /* ✅ Login success → dashboard */
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace("/dashboard/users");
+      router.replace('/dashboard/users');
     }
   }, [isAuthenticated, router]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    dispatch(adminLogin({ email, password }));
+    login(email, password);
   };
 
   return (
     <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-black">
       {/* ================= LEFT IMAGE SECTION ================= */}
       <div className="relative hidden lg:flex items-center justify-center overflow-hidden">
-        <Image 
+        <Image
           src={Img}
           alt="Bodybuilder"
           className="absolute inset-0 w-full h-full object-cover scale-110 animate-[slowZoom_20s_linear_infinite]"
@@ -66,9 +60,7 @@ export default function LoginPage() {
             <div className="mx-auto mb-3 w-16 h-16 rounded-full bg-black text-white flex items-center justify-center text-2xl font-bold">
               <Image src={ImgLogo} alt="logo" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              Admin Login
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900">Admin Login</h2>
             <p className="text-gray-500 text-sm mt-1">
               Login to manage fitness courses & content
             </p>
@@ -117,13 +109,8 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-3 mt-2 bg-black text-white rounded-lg font-semibold tracking-wide hover:bg-gray-900 transition disabled:opacity-60"
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? 'Logging in...' : 'Login'}
           </button>
-
-          {/* Footer */}
-          {/* <p className="text-center text-xs text-gray-500 mt-6">
-            © {new Date().getFullYear()} IFBB Fitness Platform
-          </p> */}
         </form>
       </div>
 

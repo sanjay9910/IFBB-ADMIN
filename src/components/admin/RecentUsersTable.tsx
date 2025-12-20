@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 import {
   Users,
   Mail,
@@ -13,6 +14,7 @@ import {
   Filter,
   Search,
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 /* ================= TYPES ================= */
 
@@ -30,9 +32,6 @@ type FilterType = "all" | "active" | "inactive";
 /* ================= CONFIG ================= */
 
 const API_URL = "https://ifbb-1.onrender.com/api/admin/get-all-users";
-
-const ADMIN_TOKEN =
-  "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OTJlYzU5NDliZjAyYWIwODJiOGIyODYiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NTg3NzkzMSwiaXNzIjoiaWlmYiIsImF1ZCI6ImlpZmItYXVkaWVuY2UiLCJleHAiOjE3NjYxMzcxMzF9.vf348GFqAWkiaF9LqHIgod07o3sLuiKCkrgi_v4CUKQ";
 
 /* ================= HELPERS ================= */
 
@@ -132,7 +131,7 @@ function UserModal({
               <p className="text-sm text-gray-500 italic">No courses purchased</p>
             ) : (
               <div className="space-y-2">
-                {student.courses.map((course, index) => (
+                {student.courses.map((course) => (
                   <div 
                     key={course.id}
                     className="p-3 bg-white rounded-lg border border-gray-200 hover:border-blue-300 transition"
@@ -155,19 +154,34 @@ function UserModal({
 /* ================= MAIN ================= */
 
 export default function UsersList() {
+  const router = useRouter();
+  const { token, isAuthenticated } = useAuth();
+
   const [students, setStudents] = useState<Student[]>([]);
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [selected, setSelected] = useState<Student | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // ✅ Fetch users with dynamic token
   useEffect(() => {
+    // Check if authenticated
+    if (!isAuthenticated || !token) {
+      router.replace("/auth/login");
+      return;
+    }
+
     const fetchUsers = async () => {
       try {
         setLoading(true);
+        setError(null);
+
+        console.log("🔵 Fetching users with token:", token.substring(0, 20) + "...");
+
         const res = await axios.get(API_URL, {
-          headers: { Authorization: `Bearer ${ADMIN_TOKEN}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
 
         const mapped: Student[] = res.data.map((u: any, idx: number) => ({
@@ -181,16 +195,27 @@ export default function UsersList() {
 
         setStudents(mapped);
         setFilteredStudents(mapped);
-      } catch (error) {
-        console.error("Error fetching users:", error);
+        console.log("✅ Users fetched successfully:", mapped.length);
+      } catch (error: any) {
+        console.error("❌ Error fetching users:", error);
+        
+        // Handle unauthorized (token expired)
+        if (error.response?.status === 401) {
+          setError("Session expired. Please login again.");
+          router.replace("/auth/login");
+          return;
+        }
+
+        setError(error.response?.data?.message || "Failed to load users");
       } finally {
         setLoading(false);
       }
     };
 
     fetchUsers();
-  }, []);
+  }, [token, isAuthenticated, router]);
 
+  // Apply filters
   useEffect(() => {
     let result = students;
 
@@ -220,9 +245,28 @@ export default function UsersList() {
     return { total, active, inactive };
   }, [students]);
 
+  // Show loading while checking auth
+  if (!isAuthenticated || !token) {
+    return (
+      <div className="p-6 min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto">
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-2xl shadow border border-gray-200">
@@ -344,7 +388,7 @@ export default function UsersList() {
                   </thead>
 
                   <tbody>
-                    {filteredStudents.map((student, idx) => (
+                    {filteredStudents.map((student) => (
                       <tr
                         key={student.id}
                         className="border-b border-gray-100 hover:bg-blue-50/50 transition duration-150 group"
@@ -360,9 +404,6 @@ export default function UsersList() {
                               <span className="font-semibold text-gray-900">
                                 {student.name}
                               </span>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {/* ID: {student.id.substring(0, 8)}... */}
-                              </div>
                             </div>
                           </div>
                         </td>

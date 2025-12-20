@@ -655,25 +655,6 @@ export default function BrandImagesPage() {
             </div>
           </div>
         </div>
-
-        {/* Bottom info */}
-        {/* <div className="mt-8 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
-          <div className="flex items-center gap-4">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold text-slate-900">API Integration Active</h3>
-              <p className="text-sm text-slate-600 mt-1">
-                All uploads and deletions are processed through your backend API. Images are stored in Cloudinary with proper metadata.
-              </p>
-            </div>
-          </div>
-        </div> */}
       </div>
     </div>
   );

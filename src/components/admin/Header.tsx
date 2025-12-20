@@ -147,49 +147,100 @@ export default function Header() {
     <>
       {/* HEADER */}
       <header
-        className="fixed pb-10 pt-10 top-0 left-0 right-0 bg-white border-b z-50 h-[var(--header-h)]"
+        className="fixed top-0 left-0 right-0 bg-white border-b z-50 h-20"
         role="banner"
       >
-        <div className="mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
-          {/* Left */}
-          <div className="flex pl-[300px] items-center gap-3">
+        <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+          {/* Left - Logo & Menu Button */}
+          <div className="flex items-center gap-4">
             <button
               aria-label="Open menu"
               onClick={() => setMobileOpen(true)}
-              className="md:hidden inline-flex items-center justify-center p-2 rounded-md hover:bg-slate-100"
+              className="lg:hidden inline-flex items-center justify-center p-2 rounded-md hover:bg-slate-100"
             >
               <Menu className="w-5 h-5 text-slate-700" />
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="hidden md:flex items-center gap-2">
-                <Image src="/images/Logo.png" alt="IFBB" width={36} height={36} />
-                <span className="text-lg font-semibold text-slate-900">IFBB Admin</span>
+              <div className="flex items-center gap-2">
+                <Image 
+                  src="/images/Logo.png" 
+                  alt="IFBB" 
+                  width={36} 
+                  height={36} 
+                  className="w-8 h-8 sm:w-9 sm:h-9"
+                  priority
+                />
+                <span className="text-lg font-semibold text-slate-900 hidden sm:block">
+                  IFBB Admin
+                </span>
+                <span className="text-lg font-semibold text-slate-900 sm:hidden">
+                  IFBB
+                </span>
               </div>
-
-              <div className="md:hidden text-lg font-semibold text-slate-900">IFBB Admin</div>
             </div>
           </div>
 
-          {/* Right */}
-          <div className="flex items-center gap-4">
+          {/* Right - Profile and Notification */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            {/* Profile - Moved to the left of Notification */}
+            <div ref={profileRef} className="relative">
+              <button
+                onClick={() => setProfileOpen((v) => !v)}
+                aria-label="Profile menu"
+                className="mt-2"
+              >
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-slate-200 relative flex-shrink-0">
+                  <Image 
+                    src="/images/sanjay.jpeg" 
+                    alt="Admin avatar" 
+                    fill 
+                    style={{ objectFit: "cover" }}
+                    sizes="(max-width: 768px) 32px, 36px"
+                  />
+                </div>
+              </button>
+
+              {/* Profile dropdown */}
+              {profileOpen && (
+                <div className="absolute right-0 mt-2 w-44 bg-white border rounded-md shadow-lg py-1 z-[100]">
+                  <a
+                    href="/dashboard/setting"
+                    className="block px-4 py-2 text-black text-sm hover:bg-slate-100 transition-colors"
+                  >
+                    Profile
+                  </a>
+                  <button
+                    onClick={() => {
+                      setProfileOpen(false);
+                      setShowLogoutModal(true);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Notification Icon */}
             <div ref={notificationRef} className="relative">
               <button
                 onClick={() => setNotificationOpen((v) => !v)}
-                className="relative p-2 rounded-full hover:bg-slate-100 transition-colors"
+                className="relative p-2 rounded-full hover:bg-slate-300 bg-slate-200 transition-colors"
+                aria-label="Notifications"
               >
                 <Bell className="w-5 h-5 text-slate-700" />
                 {unviewedCount > 0 && (
-                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-600 rounded-full">
-                    {unviewedCount}
+                  <span className="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-green-600 rounded-full">
+                    {unviewedCount > 9 ? '9+' : unviewedCount}
                   </span>
                 )}
               </button>
 
               {/* Notification Dropdown */}
               {notificationOpen && (
-                <div className="absolute right-0 mt-2 w-96 max-w-[calc(100vw-20px)] bg-white border rounded-lg shadow-2xl z-[100]">
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border rounded-lg shadow-2xl z-[100]">
                   <div className="p-4 border-b flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-slate-900">Notifications</h3>
                     {unviewedCount > 0 && (
@@ -199,7 +250,7 @@ export default function Header() {
                     )}
                   </div>
 
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="max-h-80 sm:max-h-96 overflow-y-auto">
                     {loading ? (
                       <div className="p-4 text-center text-slate-500">Loading...</div>
                     ) : inquiries.length === 0 ? (
@@ -216,16 +267,20 @@ export default function Header() {
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div
-                              className="flex-1 cursor-pointer"
+                              className="flex-1 cursor-pointer min-w-0"
                               onClick={() => handleViewNotification(inquiry)}
                             >
-                              <p className="font-semibold text-slate-900 text-sm">{inquiry.name}</p>
-                              <p className="text-xs text-slate-600 mt-1">{inquiry.course}</p>
+                              <p className="font-semibold text-slate-900 text-sm truncate">
+                                {inquiry.name}
+                              </p>
+                              <p className="text-xs text-slate-600 mt-1 truncate">
+                                {inquiry.course}
+                              </p>
                               <p className="text-xs text-slate-500 mt-1">
                                 {formatDate(inquiry.createdAt)}
                               </p>
                             </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="flex items-center gap-1 flex-shrink-0">
                               <button
                                 onClick={() => handleViewNotification(inquiry)}
                                 className="p-1.5 rounded hover:bg-blue-100 text-blue-600 transition-colors"
@@ -256,44 +311,6 @@ export default function Header() {
                 </div>
               )}
             </div>
-
-            {/* Profile */}
-            <div ref={profileRef} className="relative">
-              <button
-                onClick={() => setProfileOpen((v) => !v)}
-                className="flex items-center gap-3 border rounded-full px-3 py-1 hover:shadow-sm transition-shadow"
-              >
-                <div className="w-9 h-9 rounded-full overflow-hidden bg-slate-200 relative flex-shrink-0">
-                  <Image src="/images/sanjay.jpeg" alt="Admin avatar" fill style={{ objectFit: "cover" }} />
-                </div>
-
-                <div className="hidden sm:flex flex-col leading-tight">
-                  <span className="text-xs font-bold text-slate-800">Sanjay Admin</span>
-                  <span className="text-xs text-slate-500">sanjay@gmail.com</span>
-                </div>
-              </button>
-
-              {/* Profile dropdown */}
-              {profileOpen && (
-                <div className="absolute right-0 mt-2 w-44 bg-white border rounded-md shadow-lg py-1 z-[100]">
-                  <a
-                    href="/dashboard/setting"
-                    className="block px-4 py-2 text-black text-sm hover:bg-slate-100 transition-colors"
-                  >
-                    Profile
-                  </a>
-                  <button
-                    onClick={() => {
-                      setProfileOpen(false);
-                      setShowLogoutModal(true);
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    Logout
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </header>
@@ -301,25 +318,27 @@ export default function Header() {
       {/* NOTIFICATION DETAIL MODAL */}
       {selectedNotification && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
               <div className="flex items-start justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-slate-900">{selectedNotification.name}</h2>
+                <div className="min-w-0">
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">
+                    {selectedNotification.name}
+                  </h2>
                   <p className="text-slate-500 text-sm mt-1">
                     Submitted: {formatDate(selectedNotification.createdAt)}
                   </p>
                 </div>
                 <button
                   onClick={() => setSelectedNotification(null)}
-                  className="text-slate-500 hover:text-slate-700 text-2xl font-bold"
+                  className="text-slate-500 hover:text-slate-700 text-2xl font-bold flex-shrink-0 ml-2"
                 >
                   ×
                 </button>
               </div>
 
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label className="text-xs font-semibold text-slate-500 uppercase">Email</label>
                     <p className="text-slate-900 mt-2 break-all">{selectedNotification.email}</p>
@@ -350,7 +369,7 @@ export default function Header() {
 
                 <div>
                   <label className="text-xs font-semibold text-slate-500 uppercase">Message</label>
-                  <p className="text-slate-900 mt-2 bg-slate-50 p-4 rounded-lg">
+                  <p className="text-slate-900 mt-2 bg-slate-50 p-4 rounded-lg whitespace-pre-wrap">
                     {selectedNotification.message}
                   </p>
                 </div>
@@ -363,10 +382,10 @@ export default function Header() {
                 </div>
               </div>
 
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
                 <button
                   onClick={() => setSelectedNotification(null)}
-                  className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold py-2 rounded-lg transition-colors"
+                  className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-900 font-semibold py-2 px-4 rounded-lg transition-colors"
                 >
                   Close
                 </button>
@@ -375,7 +394,7 @@ export default function Header() {
                     handleDeleteNotification(selectedNotification._id);
                     setSelectedNotification(null);
                   }}
-                  className="px-6 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition-colors flex items-center gap-2"
+                  className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete
@@ -389,12 +408,21 @@ export default function Header() {
       {/* MOBILE MENU */}
       {mobileOpen && (
         <>
-          <div className="fixed inset-0 bg-black/40 z-40" onClick={() => setMobileOpen(false)} />
+          <div 
+            className="fixed inset-0 bg-black/40 z-40" 
+            onClick={() => setMobileOpen(false)} 
+          />
 
           <aside className="fixed inset-y-0 left-0 w-80 max-w-full bg-white z-50 shadow-lg p-4 overflow-auto">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
-                <Image src="/images/Logo.png" alt="IFBB" width={40} height={40} />
+                <Image 
+                  src="/images/Logo.png" 
+                  alt="IFBB" 
+                  width={40} 
+                  height={40} 
+                  priority
+                />
                 <div>
                   <div className="font-medium text-slate-800">IFBB Admin</div>
                   <div className="text-sm text-slate-500">sanjay@gmail.com</div>
@@ -410,19 +438,20 @@ export default function Header() {
               </button>
             </div>
 
-            <nav className="flex flex-col gap-2">
+            <nav className="flex flex-col gap-1">
               {navItems.map((it) => (
                 <a
                   key={it.key}
                   href={it.href}
                   className="px-4 py-3 rounded-md text-sm hover:bg-slate-100 transition-colors"
+                  onClick={() => setMobileOpen(false)}
                 >
                   {it.label}
                 </a>
               ))}
             </nav>
 
-            <div className="mt-6 border-t pt-4">
+            <div className="mt-8 border-t pt-4">
               <button
                 onClick={() => {
                   setMobileOpen(false);

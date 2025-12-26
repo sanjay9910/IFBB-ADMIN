@@ -6,20 +6,10 @@ import { adminLogin, logout } from '@/features/auth/authSlice';
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();
-  
-  const { token, adminInfo, loading, error, isAuthenticated } = useSelector(
-    (state: RootState) => state.auth
-  );
+  const auth = useSelector((state: RootState) => state.auth);
 
   return {
-    // State
-    token,
-    adminInfo,
-    loading,
-    error,
-    isAuthenticated,
-    
-    // Actions
+    ...auth,
     login: (email: string, password: string) =>
       dispatch(adminLogin({ email, password })),
     logout: () => dispatch(logout()),

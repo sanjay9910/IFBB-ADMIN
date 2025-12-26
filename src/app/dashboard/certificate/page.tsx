@@ -15,35 +15,68 @@ const API_CONFIG = {
 // Available categories
 const CATEGORIES = ["Trainer", "Advance", "Master"];
 
+// Types
+interface Certificate {
+  id: string;
+  name: string;
+  url: string;
+  category: string;
+  uploadedAt: string;
+  publicId?: string;
+  primary?: boolean;
+}
+
+interface FileItem {
+  id: string;
+  file: File;
+  url: string;
+  progress: number;
+  uploaded: boolean;
+  uploadedUrl: string | null;
+  error: string | null;
+  category: string;
+  primary: boolean;
+  name: string;
+  size: number;
+}
+
 export default function CertificateManager() {
   const router = useRouter();
-  const { token, isAuthenticated, logout } = useAuth();
+  const { token, isAuthenticated } = useAuth();
+  const [mounted, setMounted] = useState(false);
 
   // State management
-  const [files, setFiles] = useState([]);
-  const [uploadedCertificates, setUploadedCertificates] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState("coach");
+  const [files, setFiles] = useState<FileItem[]>([]);
+  const [uploadedCertificates, setUploadedCertificates] = useState<Certificate[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>(CATEGORIES[0]);
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Generate unique ID
   const uid = () => Math.random().toString(36).slice(2, 9);
 
-  // Check authentication on mount
+  // Set mounted flag on client-side
   useEffect(() => {
-    if (!isAuthenticated || !token) {
-      router.replace("/auth/login");
+    setMounted(true);
+  }, []);
+
+  // Check authentication on mount and when token changes
+  useEffect(() => {
+    if (mounted) {
+      if (!isAuthenticated || !token) {
+        router.replace("/auth/login");
+      }
     }
-  }, [isAuthenticated, token, router]);
+  }, [isAuthenticated, token, router, mounted]);
 
   // Upload file to server
-  const uploadFileToServer = async (file, category, onProgress) => {
+  const uploadFileToServer = async (file: File, category: string, onProgress: (progress: number) => void) => {
     try {
       if (!token) {
         throw new Error("Authentication required. Please login again.");
@@ -62,7 +95,11 @@ export default function CertificateManager() {
         onProgress(pct);
       }, 160);
 
-      console.log("🔵 Uploading certificate:", { fileName: file.name, category, tokenLength: token.length });
+      console.log("🔵 Uploading certificate:", { 
+        fileName: file.name, 
+        category, 
+        tokenLength: token.length 
+      });
 
       const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.uploadEndpoint}`, {
         method: "POST",
@@ -98,13 +135,13 @@ export default function CertificateManager() {
       console.error("❌ Upload error:", err);
       return {
         success: false,
-        error: err.message || "Upload failed",
+        error: (err as Error).message || "Upload failed",
       };
     }
   };
 
   // Fetch certificates by category
-  const fetchCertificatesByCategory = async (category) => {
+  const fetchCertificatesByCategory = async (category: string) => {
     try {
       setLoading(true);
       setError(null);
@@ -126,7 +163,7 @@ export default function CertificateManager() {
       }
 
       // Transform API response to match our UI structure
-      const certificates = (result.data || []).map((cert, index) => ({
+      const certificates: Certificate[] = (result.data || []).map((cert: any, index: number) => ({
         id: cert._id || `cert-${index}-${Date.now()}`,
         name: cert.fileUrl?.split("/").pop() || `certificate-${index}`,
         url: cert.fileUrl,
@@ -141,7 +178,7 @@ export default function CertificateManager() {
       return certificates;
     } catch (err) {
       console.error("❌ Fetch error:", err);
-      setError(`Failed to load certificates: ${err.message}`);
+      setError(`Failed to load certificates: ${(err as Error).message}`);
       return [];
     } finally {
       setLoading(false);
@@ -149,7 +186,7 @@ export default function CertificateManager() {
   };
 
   // Delete certificate
-  const deleteCertificate = async (certificateId, publicId) => {
+  const deleteCertificate = async (certificateId: string, publicId?: string) => {
     if (!token) {
       setError("Authentication required to delete certificates.");
       router.replace("/auth/login");
@@ -165,8 +202,6 @@ export default function CertificateManager() {
 
       console.log("🔵 Deleting certificate:", { certificateId, publicId });
 
-      const deleteBody = publicId ? { publicId } : { id: certificateId };
-
       const response = await fetch(
         `${API_CONFIG.baseUrl}${API_CONFIG.deleteEndpoint}/${certificateId}`,
         {
@@ -175,7 +210,7 @@ export default function CertificateManager() {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(deleteBody),
+          body: JSON.stringify({ publicId }),
         }
       );
 
@@ -186,21 +221,8 @@ export default function CertificateManager() {
       }
 
       if (!response.ok) {
-        // Retry without body
-        const retryResponse = await fetch(
-          `${API_CONFIG.baseUrl}${API_CONFIG.deleteEndpoint}/${certificateId}`,
-          {
-            method: "DELETE",
-            headers: {
-              "Authorization": `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!retryResponse.ok) {
-          const errorText = await retryResponse.text();
-          throw new Error(`Delete failed: ${retryResponse.status} - ${errorText}`);
-        }
+        const errorText = await response.text();
+        throw new Error(`Delete failed: ${response.status} - ${errorText}`);
       }
 
       // Remove from state
@@ -210,13 +232,13 @@ export default function CertificateManager() {
       setSuccess("Certificate deleted successfully!");
 
       // Refresh list
-      fetchCertificatesByCategory(selectedCategory);
+      await fetchCertificatesByCategory(selectedCategory);
 
       console.log("✅ Certificate deleted successfully");
       return true;
     } catch (err) {
       console.error("❌ Delete error:", err);
-      setError(`Failed to delete certificate: ${err.message}`);
+      setError(`Failed to delete certificate: ${(err as Error).message}`);
       return false;
     } finally {
       setDeletingId(null);
@@ -225,13 +247,15 @@ export default function CertificateManager() {
 
   // Load certificates when category changes
   useEffect(() => {
-    fetchCertificatesByCategory(selectedCategory);
-  }, [selectedCategory]);
+    if (mounted && token) {
+      fetchCertificatesByCategory(selectedCategory);
+    }
+  }, [selectedCategory, mounted, token]);
 
   // File selection handler
   const onFilesSelected = useCallback(
-    (selectedFiles) => {
-      const arr = Array.from(selectedFiles).map((file) => ({
+    (selectedFiles: FileList) => {
+      const arr: FileItem[] = Array.from(selectedFiles).map((file) => ({
         id: uid(),
         file,
         url: URL.createObjectURL(file),
@@ -247,13 +271,14 @@ export default function CertificateManager() {
 
       setFiles((prev) => [...prev, ...arr]);
       setSuccess(null);
+      setError(null);
     },
     [selectedCategory]
   );
 
   // Drag and drop handlers
   const onDrop = useCallback(
-    (e) => {
+    (e: React.DragEvent) => {
       e.preventDefault();
       setDragActive(false);
       if (e.dataTransfer?.files && e.dataTransfer.files.length) {
@@ -263,12 +288,12 @@ export default function CertificateManager() {
     [onFilesSelected]
   );
 
-  const onDragOver = useCallback((e) => {
+  const onDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(true);
   }, []);
 
-  const onDragLeave = useCallback((e) => {
+  const onDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
   }, []);
@@ -290,6 +315,7 @@ export default function CertificateManager() {
 
     setUploading(true);
     setError(null);
+    setSuccess(null);
 
     const uploadPromises = toUpload.map(async (fileItem) => {
       setFiles((prev) =>
@@ -333,17 +359,28 @@ export default function CertificateManager() {
                 : p
             )
           );
-          return { success: false, file: fileItem.name, error: result.error };
+          return { 
+            success: false, 
+            file: fileItem.name, 
+            error: result.error 
+          };
         }
       } catch (err) {
         setFiles((prev) =>
           prev.map((p) =>
             p.id === fileItem.id
-              ? { ...p, error: err.message || "Upload error" }
+              ? { 
+                  ...p, 
+                  error: (err as Error).message || "Upload error" 
+                }
               : p
           )
         );
-        return { success: false, file: fileItem.name, error: err.message };
+        return { 
+          success: false, 
+          file: fileItem.name, 
+          error: (err as Error).message 
+        };
       }
     });
 
@@ -358,7 +395,7 @@ export default function CertificateManager() {
       );
 
       // Refresh certificates list
-      fetchCertificatesByCategory(selectedCategory);
+      await fetchCertificatesByCategory(selectedCategory);
 
       // Clear uploaded files after 2 seconds
       setTimeout(() => {
@@ -370,19 +407,25 @@ export default function CertificateManager() {
   };
 
   // File management functions
-  const removeFile = (id) => {
+  const removeFile = (id: string) => {
     setFiles((prev) => {
       const file = prev.find((x) => x.id === id);
       if (file?.url) URL.revokeObjectURL(file.url);
       return prev.filter((x) => x.id !== id);
     });
+    setError(null);
   };
 
-  const setPrimary = (id) => {
-    setFiles((prev) => prev.map((x) => ({ ...x, primary: x.id === id })));
+  const setPrimaryFile = (id: string) => {
+    setFiles((prev) => 
+      prev.map((x) => ({ 
+        ...x, 
+        primary: x.id === id 
+      }))
+    );
   };
 
-  const moveFile = (id, direction) => {
+  const moveFile = (id: string, direction: number) => {
     setFiles((prev) => {
       const idx = prev.findIndex((p) => p.id === id);
       if (idx === -1) return prev;
@@ -406,7 +449,7 @@ export default function CertificateManager() {
     setSuccess(null);
   };
 
-  const formatFileSize = (bytes) => {
+  const formatFileSize = (bytes: number) => {
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
@@ -414,7 +457,7 @@ export default function CertificateManager() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-IN", {
       day: "2-digit",
@@ -425,13 +468,34 @@ export default function CertificateManager() {
     });
   };
 
+  // Handle file input change
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      onFilesSelected(e.target.files);
+    }
+    if (e.currentTarget.value) {
+      e.currentTarget.value = "";
+    }
+  };
+
   // Show loading while checking authentication
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthenticated || !token) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Checking authentication...</p>
+          <p className="text-gray-600">Redirecting to login...</p>
         </div>
       </div>
     );
@@ -440,32 +504,6 @@ export default function CertificateManager() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-10 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header with Auth Status */}
-        {/* <div className="text-center mb-10">
-          <div className="flex justify-between items-center mb-6">
-            <div></div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1 rounded-full">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                <span className="text-sm text-emerald-700">Authenticated</span>
-              </div>
-              <button
-                onClick={logout}
-                className="text-sm text-red-600 hover:text-red-700 font-medium"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-
-          <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            📜 Certificate Management
-          </h1>
-          <p className="text-lg text-slate-600 max-w-3xl mx-auto">
-            Upload, view, and manage certificates with ease
-          </p>
-        </div> */}
-
         <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
           {/* Top controls section */}
           <div className="p-8 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50">
@@ -476,7 +514,9 @@ export default function CertificateManager() {
                 </h2>
                 <p className="mt-2 text-slate-600">
                   Currently viewing:{" "}
-                  <span className="font-semibold capitalize">{selectedCategory}</span>{" "}
+                  <span className="font-semibold capitalize">
+                    {selectedCategory}
+                  </span>{" "}
                   certificates
                 </p>
               </div>
@@ -630,10 +670,7 @@ export default function CertificateManager() {
             multiple
             accept="image/*"
             className="hidden"
-            onChange={(e) => {
-              if (e.target.files) onFilesSelected(e.target.files);
-              e.currentTarget.value = "";
-            }}
+            onChange={handleFileInputChange}
           />
 
           {/* Main content area */}
@@ -761,6 +798,11 @@ export default function CertificateManager() {
                               src={fileItem.url}
                               alt={fileItem.name}
                               className="max-w-full max-h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null;
+                                target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'%3E%3C/circle%3E%3Cpolyline points='21 15 16 10 5 21'%3E%3C/polyline%3E%3C/svg%3E";
+                              }}
                             />
                           </div>
 
@@ -845,7 +887,7 @@ export default function CertificateManager() {
                             {/* Actions */}
                             <div className="flex items-center gap-2 mt-3">
                               <button
-                                onClick={() => setPrimary(fileItem.id)}
+                                onClick={() => setPrimaryFile(fileItem.id)}
                                 disabled={
                                   fileItem.primary || fileItem.uploaded
                                 }
@@ -985,9 +1027,9 @@ export default function CertificateManager() {
                                   alt={cert.name}
                                   className="max-w-full max-h-full object-cover"
                                   onError={(e) => {
-                                    e.target.onerror = null;
-                                    e.target.src =
-                                      "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'%3E%3C/circle%3E%3Cpolyline points='21 15 16 10 5 21'%3E%3C/polyline%3E%3C/svg%3E";
+                                    const target = e.target as HTMLImageElement;
+                                    target.onerror = null;
+                                    target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'%3E%3C/circle%3E%3Cpolyline points='21 15 16 10 5 21'%3E%3C/polyline%3E%3C/svg%3E";
                                   }}
                                 />
                                 <a

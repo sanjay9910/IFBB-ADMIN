@@ -3,7 +3,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { User, Mail, Globe, Bell, Lock, Check, X, Camera, Trash2, Save, RotateCcw, Shield } from "lucide-react";
-import Img from '../../../../src/components/assets/sanjay.jpeg'
+import Image from 'next/image';
+import Img from '../../../../public/images/sanjay.jpeg'; // ✅ Correct path from public folder
 
 type ProfileForm = {
   name: string;
@@ -53,7 +54,7 @@ export default function AdminSettings() {
     return () => {
       if (form.avatarPreview) URL.revokeObjectURL(form.avatarPreview);
     };
-  }, []);
+  }, [form.avatarPreview]);
 
   function onPickAvatar(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files && e.target.files[0];
@@ -176,12 +177,19 @@ export default function AdminSettings() {
                   <div className="w-36 h-36 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 via-indigo-500 to-purple-600 p-1 shadow-2xl">
                     <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
                       {form.avatarPreview ? (
-                        <Image src={Img} alt="avatar" className="w-full h-full object-cover" />
+                        <img 
+                          src={form.avatarPreview} 
+                          alt="avatar preview" 
+                          className="w-full h-full object-cover" 
+                        />
                       ) : (
-                        <div className="flex flex-col items-center justify-center">
-                          <User className="w-12 h-12 text-slate-300" />
-                          <span className="text-xs text-slate-400 mt-2">No Photo</span>
-                        </div>
+                        <Image 
+                          src={Img} 
+                          alt="default avatar" 
+                          className="w-full h-full object-cover"
+                          width={144}
+                          height={144}
+                        />
                       )}
                     </div>
                   </div>
@@ -243,26 +251,6 @@ export default function AdminSettings() {
                       placeholder="your@email.com"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
-                      <Globe className="w-4 h-4 text-slate-500" />
-                      Timezone
-                    </label>
-                    <select
-                      value={form.timezone}
-                      onChange={(e) => updateField("timezone", e.target.value)}
-                      className="w-full rounded-xl border-2 border-slate-200 px-4 text-black py-3 text-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all duration-200 bg-white"
-                    >
-                      <option>Asia/Kolkata</option>
-                      <option>UTC</option>
-                      <option>Europe/London</option>
-                      <option>America/New_York</option>
-                    </select>
-                  </div>
-
                 </div>
               </div>
             </div>
@@ -403,8 +391,6 @@ export default function AdminSettings() {
             </div>
           </div>
         </div>
-
-
       </div>
     </div>
   );

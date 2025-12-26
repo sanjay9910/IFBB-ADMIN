@@ -1,19 +1,43 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+} from 'redux-persist';
 import authReducer from '@/features/auth/authSlice';
 
-// Persist config
+/* ===== SSR SAFE STORAGE ===== */
+const createNoopStorage = () => ({
+  getItem() {
+    return Promise.resolve(null);
+  },
+  setItem(_key: string, value: any) {
+    return Promise.resolve(value);
+  },
+  removeItem() {
+    return Promise.resolve();
+  },
+});
+
+const storage =
+  typeof window !== 'undefined'
+    ? require('redux-persist/lib/storage').default
+    : createNoopStorage();
+
+/* ===== PERSIST CONFIG ===== */
 const persistConfig = {
-  key: 'root',
+  key: 'auth',
   storage,
-  whitelist: ['auth'], // Only persist auth slice
 };
 
-// Persisted reducer
 const persistedAuthReducer = persistReducer(persistConfig, authReducer);
 
-// Configure store
+/* ===== STORE ===== */
 export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
@@ -21,14 +45,12 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }),
 });
 
-// Create persistor
 export const persistor = persistStore(store);
 
-// Types for TypeScript
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

@@ -1,9 +1,10 @@
 import React from 'react'
+import Login from '../app/auth/login/page'
 
 function page() {
   return (
     <div>
-      <h1>IFBB-Admin</h1>
+      <Login />
     </div>
   )
 }

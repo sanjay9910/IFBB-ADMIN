@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle, Clock, Mail, Phone, MapPin, Book, User, Loader } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Inquiry {
   _id: string;
@@ -25,6 +26,7 @@ interface ApiResponse {
 }
 
 const NotificationPage = () => {
+   const { token } = useAuth();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -39,7 +41,7 @@ const NotificationPage = () => {
     setLoading(true);
     setError('');
     try {
-      const token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OTJlYzU5NDliZjAyYWIwODJiOGIyODYiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NjA0OTE3NSwiaXNzIjoiaWlmYiIsImF1ZCI6ImlpZmItYXVkaWVuY2UiLCJleHAiOjE3NjYzMDgzNzV9.-GBlOh0DFjsURFWFrxUtFVs10kfL64gCy0T2EMk36iQ';
+      // const token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OTJlYzU5NDliZjAyYWIwODJiOGIyODYiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NjczNzE2NSwiaXNzIjoiaWlmYiIsImF1ZCI6ImlpZmItYXVkaWVuY2UiLCJleHAiOjE3NjY5OTYzNjV9.tS421n-I4X912B42Jj7zQaLM_UjRU99CVGphy_Arvqc";
 
       const response = await fetch(
         'https://ifbb-1.onrender.com/api/admin/course-inquiries',

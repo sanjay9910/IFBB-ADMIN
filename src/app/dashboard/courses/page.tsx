@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect } from "react";
+import { useAuth } from '@/hooks/useAuth';
 
 /* ---------------- Types ---------------- */
 type ModuleItem = { 
@@ -20,8 +21,8 @@ type ModuleItem = {
 type Course = {
   _id: string;
   title: string;
-  price: number;
-  discountedPrice?: number;
+  price: number | string;
+  discountedPrice?: number | string;
   rating?: number;
   durationToComplete?: string;
   modules: ModuleItem[];
@@ -37,19 +38,15 @@ type Course = {
 };
 
 /* ------------- Constants ------------- */
-const ADMIN_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OTJlYzU5NDliZjAyYWIwODJiOGIyODYiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NjEzODkzNywiaXNzIjoiaWlmYiIsImF1ZCI6ImlpZmItYXVkaWVuY2UiLCJleHAiOjE3NjYzOTgxMzd9.k3l71CReaeWMFu7JhRqgwiFBWqrNGZJ1IpBxQ6xd5ng";
-
 const API_BASE_URL = "https://ifbb-1.onrender.com/api/admin";
-
 const PLACEHOLDER = "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?q=80&w=1200&auto=format&fit=crop";
 
 /* ------------- API Functions ------------- */
-async function fetchCourses(page = 1, limit = 10) {
+async function fetchCourses(page = 1, limit = 10, token: string) {
   try {
-    // Fetch all courses with pagination support
     const response = await fetch(`${API_BASE_URL}/get-stats?page=${page}&limit=${limit}`, {
       headers: {
-        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -60,10 +57,10 @@ async function fetchCourses(page = 1, limit = 10) {
     
     const data = await response.json();
     return {
-      courses: data.stats.recentCourses.map((course: any) => ({
+      courses: (data.stats?.recentCourses || []).map((course: any) => ({
         _id: course._id,
         title: course.title,
-        price: course.price,
+        price: course.price || 0,
         discountedPrice: course.discountedPrice,
         rating: course.averageRating || 0,
         durationToComplete: course.durationToComplete,
@@ -84,9 +81,9 @@ async function fetchCourses(page = 1, limit = 10) {
         updatedAt: course.updatedAt,
         purchasedByHowMuch: course.purchasedByHowMuch || 0
       })) as Course[],
-      total: data.stats.totalCourses || 0,
+      total: data.stats?.totalCourses || 0,
       page: page,
-      totalPages: Math.ceil((data.stats.totalCourses || 0) / limit)
+      totalPages: Math.ceil((data.stats?.totalCourses || 0) / limit)
     };
   } catch (error) {
     console.error("Error fetching courses:", error);
@@ -95,12 +92,12 @@ async function fetchCourses(page = 1, limit = 10) {
 }
 
 // Add new function for toggling course visibility
-async function toggleCourseVisibility(courseId: string, isPublic: boolean) {
+async function toggleCourseVisibility(courseId: string, isPublic: boolean, token: string) {
   try {
     const response = await fetch(`${API_BASE_URL}/change-course-visibility/${courseId}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({ isPublic })
@@ -118,12 +115,12 @@ async function toggleCourseVisibility(courseId: string, isPublic: boolean) {
   }
 }
 
-async function createCourse(courseData: FormData) {
+async function createCourse(courseData: FormData, token: string) {
   try {
     const response = await fetch(`${API_BASE_URL}/create-course`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
       },
       body: courseData
     });
@@ -141,12 +138,12 @@ async function createCourse(courseData: FormData) {
   }
 }
 
-async function updateCourse(courseId: string, courseData: FormData) {
+async function updateCourse(courseId: string, courseData: FormData, token: string) {
   try {
     const response = await fetch(`${API_BASE_URL}/edit-course/${courseId}`, {
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
       },
       body: courseData
     });
@@ -164,12 +161,12 @@ async function updateCourse(courseId: string, courseData: FormData) {
   }
 }
 
-async function updateModule(courseId: string, moduleId: string, moduleData: FormData) {
+async function updateModule(courseId: string, moduleId: string, moduleData: FormData, token: string) {
   try {
     const response = await fetch(`${API_BASE_URL}/edit-module/${courseId}/${moduleId}`, {
       method: 'PATCH',
       headers: {
-        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
       },
       body: moduleData
     });
@@ -186,12 +183,12 @@ async function updateModule(courseId: string, moduleId: string, moduleData: Form
   }
 }
 
-async function addModule(courseId: string, moduleData: FormData) {
+async function addModule(courseId: string, moduleData: FormData, token: string) {
   try {
     const response = await fetch(`${API_BASE_URL}/add-module-to-course/${courseId}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
       },
       body: moduleData
     });
@@ -208,18 +205,20 @@ async function addModule(courseId: string, moduleData: FormData) {
   }
 }
 
-async function deleteModule(courseId: string, moduleId: string) {
+async function deleteModule(courseId: string, moduleId: string, token: string) {
   try {
-    const response = await fetch(`${API_BASE_URL}/delete-module/${courseId}/${moduleId}`, {
+    const response = await fetch(`${API_BASE_URL}/delete-module/${moduleId}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to delete module: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`Delete module failed. Course ID: ${courseId}, Module ID: ${moduleId}, Status: ${response.status}`);
+      throw new Error(`Failed to delete module: ${response.status} - ${errorText}`);
     }
     
     return await response.json();
@@ -229,12 +228,12 @@ async function deleteModule(courseId: string, moduleId: string) {
   }
 }
 
-async function deleteCourse(courseId: string) {
+async function deleteCourse(courseId: string, token: string) {
   try {
     const response = await fetch(`${API_BASE_URL}/delete-course/${courseId}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -275,6 +274,7 @@ function StatCard({ label, value, icon }: { label: string; value: string | numbe
 
 /* ------------------ Page ------------------ */
 export default function CoursesAdminPage() {
+  const { token } = useAuth() || {};
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -305,15 +305,19 @@ export default function CoursesAdminPage() {
 
   // Fetch courses on component mount
   useEffect(() => {
-    loadCourses(pagination.currentPage);
-  }, []);
+    if (token) {
+      loadCourses(pagination.currentPage);
+    }
+  }, [token]);
 
   async function loadCourses(page = 1) {
+    if (!token) return;
+    
     setLoading(true);
     try {
       const response = await fetch(`${API_BASE_URL}/get-stats?page=${page}&limit=${pagination.itemsPerPage}`, {
         headers: {
-          'Authorization': `Bearer ${ADMIN_TOKEN}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -322,11 +326,11 @@ export default function CoursesAdminPage() {
         const data = await response.json();
         
         // Extract all courses from stats
-        const allCourses = data.stats.recentCourses || [];
+        const allCourses = data.stats?.recentCourses || [];
         const courseData = allCourses.map((course: any) => ({
           _id: course._id,
           title: course.title,
-          price: course.price,
+          price: course.price || 0,
           discountedPrice: course.discountedPrice,
           rating: course.averageRating || 0,
           durationToComplete: course.durationToComplete,
@@ -350,19 +354,19 @@ export default function CoursesAdminPage() {
         
         setCourses(courseData);
         setStats({
-          totalCourses: data.stats.totalCourses,
-          totalUsers: data.stats.totalUsers,
-          totalRevenue: data.stats.totalRevenue,
-          averageRating: data.stats.averageRating,
-          totalPurchasesCount: data.stats.totalPurchasesCount
+          totalCourses: data.stats?.totalCourses || 0,
+          totalUsers: data.stats?.totalUsers || 0,
+          totalRevenue: data.stats?.totalRevenue || 0,
+          averageRating: data.stats?.averageRating || 0,
+          totalPurchasesCount: data.stats?.totalPurchasesCount || 0
         });
         
         // Update pagination
         setPagination(prev => ({
           ...prev,
           currentPage: page,
-          totalPages: Math.ceil(data.stats.totalCourses / prev.itemsPerPage),
-          totalItems: data.stats.totalCourses
+          totalPages: Math.ceil((data.stats?.totalCourses || 0) / prev.itemsPerPage),
+          totalItems: data.stats?.totalCourses || 0
         }));
       }
     } catch (error) {
@@ -454,7 +458,7 @@ export default function CoursesAdminPage() {
 
   async function submitModuleForm(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!editingModule || !selectedCourseForModule) return;
+    if (!editingModule || !selectedCourseForModule || !token) return;
     
     if (!editingModule.title.trim()) {
       setModuleError("Please enter module title");
@@ -490,9 +494,9 @@ export default function CoursesAdminPage() {
 
       let response;
       if (editingModule._id) {
-        response = await updateModule(selectedCourseForModule, editingModule._id, formData);
+        response = await updateModule(selectedCourseForModule, editingModule._id, formData, token);
       } else {
-        response = await addModule(selectedCourseForModule, formData);
+        response = await addModule(selectedCourseForModule, formData, token);
       }
 
       if (response.message || response.success) {
@@ -511,21 +515,33 @@ export default function CoursesAdminPage() {
   }
 
   async function deleteModuleHandler(courseId: string, moduleId: string) {
+    if (!token) return;
     if (!confirm("Delete this module? This cannot be undone.")) return;
     
     try {
-      await deleteModule(courseId, moduleId);
+      console.log(`Deleting module: Course ID - ${courseId}, Module ID - ${moduleId}`);
+      
+      await deleteModule(courseId, moduleId, token);
       await loadCourses(pagination.currentPage);
+      
+      // Refresh selected course if it's open
+      if (selectedCourse && selectedCourse._id === courseId) {
+        const updatedCourse = courses.find(c => c._id === courseId);
+        if (updatedCourse) {
+          setSelectedCourse(updatedCourse);
+        }
+      }
+      
       alert("Module deleted successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting module:", error);
-      alert("Failed to delete module. Please try again.");
+      alert(`Failed to delete module: ${error.message}`);
     }
   }
 
   async function submitForm(e?: React.FormEvent) {
     e?.preventDefault();
-    if (!editing) return;
+    if (!editing || !token) return;
     
     if (!editing.title.trim()) {
       alert("Please enter course title");
@@ -555,9 +571,9 @@ export default function CoursesAdminPage() {
 
       let response;
       if (editing._id) {
-        response = await updateCourse(editing._id, formData);
+        response = await updateCourse(editing._id, formData, token);
       } else {
-        response = await createCourse(formData);
+        response = await createCourse(formData, token);
       }
 
       if (response.message) {
@@ -575,10 +591,11 @@ export default function CoursesAdminPage() {
   }
 
   async function onDelete(courseId: string) {
+    if (!token) return;
     if (!confirm("Delete this course? This cannot be undone.")) return;
     
     try {
-      await deleteCourse(courseId);
+      await deleteCourse(courseId, token);
       await loadCourses(pagination.currentPage);
       if (selectedCourse?._id === courseId) {
         setSelectedCourse(null);
@@ -592,13 +609,15 @@ export default function CoursesAdminPage() {
 
   // Fixed: Proper visibility toggle with API call
   async function toggleVisibility(courseId: string) {
+    if (!token) return;
+    
     const course = courses.find(c => c._id === courseId);
     if (!course) return;
     
     const newVisibility = !course.isPublic;
     
     try {
-      await toggleCourseVisibility(courseId, newVisibility);
+      await toggleCourseVisibility(courseId, newVisibility, token);
       
       // Update local state
       setCourses(prev => prev.map(p => 
@@ -704,6 +723,15 @@ export default function CoursesAdminPage() {
     );
   }
 
+  // Helper function to format price
+  function formatPrice(price: number | string): string {
+    if (typeof price === 'string') {
+      const numPrice = parseFloat(price);
+      return isNaN(numPrice) ? "0.00" : numPrice.toFixed(2);
+    }
+    return price.toFixed(2);
+  }
+
   /* UI */
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white py-6">
@@ -740,7 +768,7 @@ export default function CoursesAdminPage() {
             />
             <StatCard
               label="Total Revenue"
-              value={`$${stats.totalRevenue}`}
+              value={`$${stats.totalRevenue.toFixed(2)}`}
               icon={<span className="text-2xl">💰</span>}
             />
             <StatCard
@@ -763,7 +791,7 @@ export default function CoursesAdminPage() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search courses, tags, or descriptions..."
-                  className="w-full pl-10 text-black pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                 />
                 {query && (
                   <button
@@ -838,9 +866,9 @@ export default function CoursesAdminPage() {
                     <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
                       <div className="text-sm text-slate-500">Price</div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold text-slate-900">${c.price.toFixed(2)}</span>
+                        <span className="text-xl font-bold text-slate-900">${formatPrice(c.price)}</span>
                         {c.discountedPrice && (
-                          <span className="text-sm text-slate-400 line-through">${c.discountedPrice.toFixed(2)}</span>
+                          <span className="text-sm text-slate-400 line-through">${formatPrice(c.discountedPrice)}</span>
                         )}
                       </div>
                     </div>
@@ -938,7 +966,7 @@ export default function CoursesAdminPage() {
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-bold text-slate-900">{c.title}</h3>
                         <div className="flex items-center gap-4">
-                          <span className="text-lg font-bold text-slate-900">${c.price.toFixed(2)}</span>
+                          <span className="text-lg font-bold text-slate-900">${formatPrice(c.price)}</span>
                           <div className="flex items-center gap-2">
                             <Pill className={`${c.published ? "bg-emerald-500 text-white" : "bg-slate-500 text-white"}`}>
                               {c.published ? "Published" : "Draft"}
@@ -1040,7 +1068,7 @@ export default function CoursesAdminPage() {
                       type="text"
                       value={editing.title}
                       onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-                      className="w-full px-4 py-3 text-black bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                       required
                     />
                   </div>
@@ -1051,7 +1079,7 @@ export default function CoursesAdminPage() {
                       type="text"
                       value={editing.durationToComplete || ""}
                       onChange={(e) => setEditing({ ...editing, durationToComplete: e.target.value })}
-                      className="w-full px-4 text-black py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                       placeholder="e.g., 40 hours"
                     />
                   </div>
@@ -1063,7 +1091,7 @@ export default function CoursesAdminPage() {
                     value={editing.description || ""}
                     onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-3 text-black bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none"
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none text-slate-900"
                   />
                 </div>
 
@@ -1076,7 +1104,7 @@ export default function CoursesAdminPage() {
                       min="0"
                       value={editing.price}
                       onChange={(e) => setEditing({ ...editing, price: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-4 py-3 text-black bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                       required
                     />
                   </div>
@@ -1089,7 +1117,7 @@ export default function CoursesAdminPage() {
                       min="0"
                       value={editing.discountedPrice || ""}
                       onChange={(e) => setEditing({ ...editing, discountedPrice: e.target.value ? parseFloat(e.target.value) : undefined })}
-                      className="w-full px-4 text-black py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                     />
                   </div>
 
@@ -1098,10 +1126,10 @@ export default function CoursesAdminPage() {
                     <select
                       value={editing.isPublic ? "true" : "false"}
                       onChange={(e) => setEditing({ ...editing, isPublic: e.target.value === "true", published: e.target.value === "true" })}
-                      className="w-full px-4 py-3 bg-white border text-black border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-slate-900"
                     >
-                      <option className="text-black" value="false">Private</option>
-                      <option className="text-black" value="true">Public</option>
+                      <option value="false">Private</option>
+                      <option value="true">Public</option>
                     </select>
                   </div>
                 </div>
@@ -1181,7 +1209,7 @@ export default function CoursesAdminPage() {
                     disabled={saving}
                     className={`px-6 py-3 rounded-xl font-medium transition ${
                       saving
-                        ? "bg-slate-400 cursor-not-allowed"
+                        ? "bg-slate-400 cursor-not-allowed text-white"
                         : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
                     }`}
                   >
@@ -1246,7 +1274,7 @@ export default function CoursesAdminPage() {
                     type="text"
                     value={editingModule.title}
                     onChange={(e) => setEditingModule({ ...editingModule, title: e.target.value })}
-                    className="w-full px-4 py-3 bg-white text-black border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                     required
                     placeholder="e.g., Introduction to Course"
                   />
@@ -1258,7 +1286,7 @@ export default function CoursesAdminPage() {
                     value={editingModule.description || ""}
                     onChange={(e) => setEditingModule({ ...editingModule, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-3 text-black bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none"
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none text-slate-900"
                     placeholder="Brief description of the module..."
                   />
                 </div>
@@ -1268,7 +1296,7 @@ export default function CoursesAdminPage() {
                   <select
                     value={editingModule.type || ""}
                     onChange={(e) => setEditingModule({ ...editingModule, type: e.target.value })}
-                    className="w-full px-4 py-3 bg-white text-black border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-slate-900"
                   >
                     <option value="">Select type</option>
                     <option value="video">video</option>
@@ -1348,7 +1376,7 @@ export default function CoursesAdminPage() {
                           setEditingModule({ ...editingModule, assetLink: e.target.value, assetFile: null });
                           setModuleError("");
                         }}
-                        className="w-full px-4 py-3 bg-white text-black border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                        className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                         placeholder="https://example.com/video"
                       />
                     </div>
@@ -1377,7 +1405,7 @@ export default function CoursesAdminPage() {
                     disabled={saving}
                     className={`px-6 py-3 rounded-xl font-medium transition ${
                       saving
-                        ? "bg-slate-400 cursor-not-allowed"
+                        ? "bg-slate-400 cursor-not-allowed text-white"
                         : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
                     }`}
                   >
@@ -1539,10 +1567,10 @@ export default function CoursesAdminPage() {
                     <div className="space-y-4">
                       <div>
                         <div className="text-sm text-slate-500">Price</div>
-                        <div className="text-2xl font-bold text-slate-900">${selectedCourse.price.toFixed(2)}</div>
+                        <div className="text-2xl font-bold text-slate-900">${formatPrice(selectedCourse.price)}</div>
                         {selectedCourse.discountedPrice && (
                           <div className="text-sm text-slate-400 line-through mt-1">
-                            ${selectedCourse.discountedPrice.toFixed(2)}
+                            ${formatPrice(selectedCourse.discountedPrice)}
                           </div>
                         )}
                       </div>

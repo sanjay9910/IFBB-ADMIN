@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 
 /* ---------------- Types ---------------- */
 type GalleryImage = {
@@ -16,10 +17,7 @@ type ImageWithSize = GalleryImage & {
 };
 
 /* ------------- Constants ------------- */
-const ADMIN_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OTJlYzU5NDliZjAyYWIwODJiOGIyODYiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NTg3NzkzMSwiaXNzIjoiaWlmYiIsImF1ZCI6ImlpZmItYXVkaWVuY2UiLCJleHAiOjE3NjYxMzcxMzF9.vf348GFqAWkiaF9LqHIgod07o3sLuiKCkrgi_v4CUKQ";
-
 const API_BASE_URL = "https://ifbb-1.onrender.com/api";
-const ADMIN_API_BASE_URL = "https://ifbb-1.onrender.com/api/admin";
 
 /* ------------- Helper Functions ------------- */
 async function getImageSize(url: string): Promise<number> {
@@ -95,12 +93,12 @@ async function fetchGalleryImagesWithSizes(): Promise<ImageWithSize[]> {
   }
 }
 
-async function uploadGalleryImage(formData: FormData) {
+async function uploadGalleryImage(formData: FormData, token: string) {
   try {
-    const response = await fetch(`${ADMIN_API_BASE_URL}/gallery`, {
+    const response = await fetch(`${API_BASE_URL}/admin/gallery`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
       },
       body: formData
     });
@@ -117,12 +115,12 @@ async function uploadGalleryImage(formData: FormData) {
   }
 }
 
-async function deleteGalleryImage(imageId: string) {
+async function deleteGalleryImage(imageId: string, token: string) {
   try {
-    const response = await fetch(`${ADMIN_API_BASE_URL}/gallery/${imageId}`, {
+    const response = await fetch(`${API_BASE_URL}/admin/gallery/${imageId}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${ADMIN_TOKEN}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     });
@@ -141,21 +139,31 @@ async function deleteGalleryImage(imageId: string) {
 
 /* ------------------ Component ------------------ */
 export default function GalleryPage() {
+  const { token, isAuthenticated } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [images, setImages] = useState<ImageWithSize[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selectedImage, setSelectedImage] = useState<ImageWithSize | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
   const [totalStorage, setTotalStorage] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // Set mounted flag
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Fetch images on component mount
   useEffect(() => {
-    loadImages();
-  }, []);
+    if (mounted) {
+      loadImages();
+    }
+  }, [mounted]);
 
   // Update total storage when images change
   useEffect(() => {
@@ -165,10 +173,10 @@ export default function GalleryPage() {
 
   async function loadImages() {
     setLoading(true);
+    setError("");
     try {
       const galleryImages = await fetchGalleryImagesWithSizes();
       setImages(galleryImages);
-      setError("");
     } catch (error: any) {
       console.error("Error loading images:", error);
       setError("Failed to load gallery images. Please try again.");
@@ -188,37 +196,57 @@ export default function GalleryPage() {
   }
 
   function handleOpenUploadModal() {
+    if (!isAuthenticated || !token) {
+      setError("Authentication required. Please login to upload images.");
+      return;
+    }
+    
     setShowUploadModal(true);
     setError("");
     setSuccess("");
-  }
-
-  function handleCloseUploadModal() {
-    setShowUploadModal(false);
+    setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   }
 
+  function handleCloseUploadModal() {
+    setShowUploadModal(false);
+    setSelectedFile(null);
+    setError("");
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError("Please select a valid image file (JPEG, PNG, etc.)");
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Image size should be less than 5MB");
+        return;
+      }
+
+      setSelectedFile(file);
+      setError("");
+    }
+  };
+
   async function handleFileUpload(e: React.FormEvent) {
     e.preventDefault();
     
-    if (!fileInputRef.current?.files?.length) {
+    if (!token) {
+      setError("Authentication required. Please login to upload images.");
+      return;
+    }
+
+    if (!selectedFile) {
       setError("Please select an image to upload");
-      return;
-    }
-
-    const file = fileInputRef.current.files[0];
-    
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError("Please select a valid image file (JPEG, PNG, etc.)");
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image size should be less than 5MB");
       return;
     }
 
@@ -228,9 +256,9 @@ export default function GalleryPage() {
 
     try {
       const formData = new FormData();
-      formData.append('image', file);
+      formData.append('image', selectedFile);
 
-      const result = await uploadGalleryImage(formData);
+      const result = await uploadGalleryImage(formData, token);
       
       if (result.success) {
         setSuccess("Image uploaded successfully!");
@@ -241,19 +269,28 @@ export default function GalleryPage() {
       }
     } catch (error: any) {
       console.error("Upload error:", error);
-      setError(error.message || "Failed to upload image. Please try again.");
+      if (error.message.includes("401") || error.message.includes("Unauthorized")) {
+        setError("Session expired. Please login again.");
+      } else {
+        setError(error.message || "Failed to upload image. Please try again.");
+      }
     } finally {
       setUploading(false);
     }
   }
 
   async function handleDeleteImage(imageId: string) {
+    if (!token) {
+      setError("Authentication required. Please login to delete images.");
+      return;
+    }
+
     if (!confirm("Are you sure you want to delete this image? This action cannot be undone.")) {
       return;
     }
 
     try {
-      const result = await deleteGalleryImage(imageId);
+      const result = await deleteGalleryImage(imageId, token);
       
       if (result.success) {
         setSuccess("Image deleted successfully!");
@@ -269,7 +306,11 @@ export default function GalleryPage() {
       }
     } catch (error: any) {
       console.error("Delete error:", error);
-      setError(error.message || "Failed to delete image. Please try again.");
+      if (error.message.includes("401") || error.message.includes("Unauthorized")) {
+        setError("Session expired. Please login again.");
+      } else {
+        setError(error.message || "Failed to delete image. Please try again.");
+      }
     }
   }
 
@@ -282,13 +323,31 @@ export default function GalleryPage() {
     });
   }
 
-  // Get latest image date
   function getLatestImageDate() {
     if (images.length === 0) return null;
     const sorted = [...images].sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
     return sorted[0].createdAt;
+  }
+
+  // Copy URL to clipboard
+  const copyToClipboard = (url: string) => {
+    navigator.clipboard.writeText(url)
+      .then(() => setSuccess("Image URL copied to clipboard!"))
+      .catch(() => setError("Failed to copy URL to clipboard"));
+  };
+
+  // Show loading while checking authentication
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -298,12 +357,17 @@ export default function GalleryPage() {
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Gallery</h1>
-              <p className="mt-2 text-slate-600">Manage and showcase your collection of images</p>
+              <h1 className="text-3xl font-bold text-slate-900">Gallery Management</h1>
+              <p className="mt-2 text-slate-600">Upload and manage your gallery images</p>
             </div>
             <button
               onClick={handleOpenUploadModal}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+              disabled={!isAuthenticated || !token}
+              className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium ${
+                !isAuthenticated || !token
+                  ? "bg-slate-400 cursor-not-allowed text-white"
+                  : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
+              }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -352,22 +416,38 @@ export default function GalleryPage() {
         {/* Error/Success Messages */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-            <div className="flex items-center gap-2 text-red-700">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>{error}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-700">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{error}</span>
+              </div>
+              <button
+                onClick={() => setError("")}
+                className="text-red-500 hover:text-red-700"
+              >
+                ✕
+              </button>
             </div>
           </div>
         )}
 
         {success && (
           <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-            <div className="flex items-center gap-2 text-emerald-700">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>{success}</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-emerald-700">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>{success}</span>
+              </div>
+              <button
+                onClick={() => setSuccess("")}
+                className="text-emerald-500 hover:text-emerald-700"
+              >
+                ✕
+              </button>
             </div>
           </div>
         )}
@@ -386,7 +466,12 @@ export default function GalleryPage() {
             <p className="text-slate-600 mb-6">Upload your first image to get started</p>
             <button
               onClick={handleOpenUploadModal}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl shadow font-medium"
+              disabled={!isAuthenticated || !token}
+              className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl shadow font-medium ${
+                !isAuthenticated || !token
+                  ? "bg-slate-400 cursor-not-allowed text-white"
+                  : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
+              }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -397,81 +482,81 @@ export default function GalleryPage() {
         ) : (
           /* Gallery Grid */
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-  {images.map((image) => (
-    <div
-      key={image._id}
-      className="group relative bg-white rounded-2xl border border-slate-200/50 overflow-hidden shadow-md hover:shadow-2xl transition-all duration-400 hover:-translate-y-2 cursor-pointer"
-    >
-      {/* Image Container */}
-      <div 
-        className="relative h-72 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200"
-        onClick={() => handleImageClick(image)}
-      >
-        <img
-          src={image.imageUrl}
-          alt={`Gallery image ${image._id}`}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-        />
-        
-        {/* Premium Overlay Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
+            {images.map((image) => (
+              <div
+                key={image._id}
+                className="group relative bg-white rounded-2xl border border-slate-200/50 overflow-hidden shadow-md hover:shadow-2xl transition-all duration-400 hover:-translate-y-2 cursor-pointer"
+              >
+                {/* Image Container */}
+                <div 
+                  className="relative h-72 overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200"
+                  onClick={() => handleImageClick(image)}
+                >
+                  <img
+                    src={image.imageUrl}
+                    alt={`Gallery image ${image._id}`}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  
+                  {/* Premium Overlay Gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400" />
 
-        {/* Date Badge - Enhanced */}
-        <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md rounded-full px-3 py-1.5 shadow-lg border border-white/50">
-          <div className="text-xs font-semibold text-slate-700 tracking-wide">
-            {formatDate(image.createdAt)}
-          </div>
-        </div>
+                  {/* Date Badge - Enhanced */}
+                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md rounded-full px-3 py-1.5 shadow-lg border border-white/50">
+                    <div className="text-xs font-semibold text-slate-700 tracking-wide">
+                      {formatDate(image.createdAt)}
+                    </div>
+                  </div>
 
-        {/* View Icon - Appears on Hover */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-400">
-          <div className="bg-white/20 backdrop-blur-md p-4 rounded-full border border-white/30">
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-            </svg>
-          </div>
-        </div>
-      </div>
+                  {/* View Icon - Appears on Hover */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-400">
+                    <div className="bg-white/20 backdrop-blur-md p-4 rounded-full border border-white/30">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
 
-      {/* Info Section */}
-      <div className="p-4 bg-gradient-to-b from-white to-slate-50/50">
-        
-        {/* Size Info */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-            <span className="text-xs font-medium text-slate-600">
-              {image.sizeInBytes ? formatBytes(image.sizeInBytes) : 'Size unknown'}
-            </span>
+                {/* Info Section */}
+                <div className="p-4 bg-gradient-to-b from-white to-slate-50/50">
+                  
+                  {/* Size Info */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                      <span className="text-xs font-medium text-slate-600">
+                        {image.sizeInBytes ? formatBytes(image.sizeInBytes) : 'Size unknown'}
+                      </span>
+                    </div>
+                    
+                    {/* Delete Button */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteImage(image._id);
+                      }}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
+                      title="Delete image"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  {/* View Details Button */}
+                  <button
+                    onClick={() => handleImageClick(image)}
+                    className="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+                  >
+                    View Details
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-          
-          {/* Delete Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteImage(image._id);
-            }}
-            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
-            title="Delete image"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-          </button>
-        </div>
-        
-        {/* View Details Button */}
-        <button
-          onClick={() => handleImageClick(image)}
-          className="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
-        >
-          View Details
-        </button>
-      </div>
-    </div>
-  ))}
-</div>
         )}
       </div>
 
@@ -504,38 +589,38 @@ export default function GalleryPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Select Image *
                   </label>
-                  <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-emerald-400 transition cursor-pointer bg-slate-50">
-                    <div className="text-4xl mb-3">📁</div>
-                    <p className="text-slate-600 mb-2">Click to browse or drag & drop</p>
-                    <p className="text-sm text-slate-500 mb-4">Supports: JPG, PNG, WebP (Max 5MB)</p>
+                  <div 
+                    className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-emerald-400 transition cursor-pointer bg-slate-50"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {selectedFile ? (
+                      <div className="flex flex-col items-center">
+                        <div className="text-4xl mb-3">📷</div>
+                        <p className="text-slate-600 mb-1">{selectedFile.name}</p>
+                        <p className="text-sm text-slate-500">{formatBytes(selectedFile.size)}</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="text-4xl mb-3">📁</div>
+                        <p className="text-slate-600 mb-2">Click to browse or drag & drop</p>
+                        <p className="text-sm text-slate-500 mb-4">Supports: JPG, PNG, WebP (Max 5MB)</p>
+                      </>
+                    )}
                     <input
                       type="file"
                       id="galleryImage"
                       ref={fileInputRef}
                       className="hidden"
                       accept="image/*"
-                      onChange={() => setError("")}
+                      onChange={handleFileSelect}
                     />
                     <label
                       htmlFor="galleryImage"
-                      className="inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium cursor-pointer transition"
+                      className="inline-block mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium cursor-pointer transition"
                     >
-                      Choose File
+                      {selectedFile ? 'Change File' : 'Choose File'}
                     </label>
                   </div>
-                  {fileInputRef.current?.files?.[0] && (
-                    <div className="mt-3 p-3 bg-slate-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="text-2xl">📷</div>
-                        <div className="flex-1">
-                          <div className="font-medium text-slate-900">{fileInputRef.current.files[0].name}</div>
-                          <div className="text-sm text-slate-600">
-                            {formatBytes(fileInputRef.current.files[0].size)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -556,10 +641,10 @@ export default function GalleryPage() {
                   </button>
                   <button
                     type="submit"
-                    disabled={uploading}
+                    disabled={uploading || !selectedFile || !token}
                     className={`px-6 py-3 rounded-xl font-medium transition ${
-                      uploading
-                        ? "bg-slate-400 cursor-not-allowed"
+                      uploading || !selectedFile || !token
+                        ? "bg-slate-400 cursor-not-allowed text-white"
                         : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg"
                     }`}
                   >
@@ -641,17 +726,19 @@ export default function GalleryPage() {
                       Open in New Tab
                     </a>
                     <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(selectedImage.imageUrl);
-                        setSuccess("Image URL copied to clipboard!");
-                      }}
+                      onClick={() => copyToClipboard(selectedImage.imageUrl)}
                       className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl font-medium transition-colors duration-200"
                     >
                       Copy Image URL
                     </button>
                     <button
                       onClick={() => handleDeleteImage(selectedImage._id)}
-                      className="w-full py-3 px-4 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-medium transition-colors duration-200"
+                      disabled={!token}
+                      className={`w-full py-3 px-4 rounded-xl font-medium transition-colors duration-200 ${
+                        !token
+                          ? "bg-red-100 text-red-400 cursor-not-allowed"
+                          : "bg-red-50 hover:bg-red-100 text-red-600"
+                      }`}
                     >
                       Delete Image
                     </button>

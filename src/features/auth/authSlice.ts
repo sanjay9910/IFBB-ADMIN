@@ -17,10 +17,14 @@ const initialState: AuthState = {
   isAuthenticated: false,
 };
 
-// Async thunk for login
+/* ================= LOGIN THUNK ================= */
+
 export const adminLogin = createAsyncThunk(
   'auth/adminLogin',
-  async (credentials: { email: string; password: string }, { rejectWithValue }) => {
+  async (
+    credentials: { email: string; password: string },
+    { rejectWithValue }
+  ) => {
     try {
       const response = await apiLogin(credentials);
       return response;
@@ -30,7 +34,8 @@ export const adminLogin = createAsyncThunk(
   }
 );
 
-// Auth slice
+/* ================= SLICE ================= */
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -40,8 +45,7 @@ const authSlice = createSlice({
       state.adminInfo = null;
       state.isAuthenticated = false;
       state.error = null;
-      // Clear localStorage
-      localStorage.removeItem('persist:root');
+      state.loading = false;
     },
     clearError: (state) => {
       state.error = null;
@@ -49,25 +53,21 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Login pending
       .addCase(adminLogin.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      // Login fulfilled
       .addCase(adminLogin.fulfilled, (state, action) => {
         state.loading = false;
         state.token = action.payload.token;
         state.adminInfo = action.payload.adminInfo || {};
         state.isAuthenticated = true;
-        state.error = null;
       })
-      // Login rejected
       .addCase(adminLogin.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-        state.isAuthenticated = false;
         state.token = null;
+        state.isAuthenticated = false;
       });
   },
 });

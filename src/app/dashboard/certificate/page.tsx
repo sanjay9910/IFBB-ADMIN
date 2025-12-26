@@ -13,7 +13,7 @@ const API_CONFIG = {
 };
 
 // Available categories
-const CATEGORIES = ["coach", "athlete", "judge", "trainer", "other"];
+const CATEGORIES = ["Trainer", "Advance", "Master"];
 
 export default function CertificateManager() {
   const router = useRouter();

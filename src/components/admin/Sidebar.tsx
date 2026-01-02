@@ -1,19 +1,21 @@
-// src/components/admin/Sidebar.tsx
 "use client";
+
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { 
-  Users, 
-  Award, 
-  BookOpen, 
-  FileText, 
-  Newspaper, 
+import {
+  Users,
+  Award,
+  BookOpen,
+  FileText,
+  Newspaper,
   Bell,
-  Image,
-  Settings, 
-  LogOut, 
-  ChevronRight
+  Image as ImageIcon,
+  Settings,
+  LogOut,
+  ChevronRight,
+  Menu,
+  X,
 } from "lucide-react";
 
 const items = [
@@ -23,147 +25,142 @@ const items = [
   { key: "certificates", label: "Certificates", href: "/dashboard/certificate", icon: FileText },
   { key: "news", label: "News", href: "/dashboard/news", icon: Newspaper },
   { key: "notification", label: "Notification", href: "/dashboard/notification", icon: Bell },
-  { key: "gallery", label: "Gallery", href: "/dashboard/galleryImag", icon: Image },
+  { key: "gallery", label: "Gallery", href: "/dashboard/galleryImag", icon: ImageIcon },
   { key: "settings", label: "Settings", href: "/dashboard/setting", icon: Settings },
 ];
 
 export default function Sidebar() {
-  const path = usePathname() || "/admin";
+  const pathname = usePathname() || "/";
   const router = useRouter();
 
+  const [open, setOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const handleLogoutConfirm = () => {
+  const handleLogout = () => {
     setShowLogoutModal(false);
-    // 🔥 Replace with your logout logic
     router.push("/login");
   };
 
+  const SidebarContent = (
+    <>
+      {/* Logo */}
+      <div className="px-6 py-6 border-b border-slate-700/50 flex justify-center">
+        <img src="/images/Logo.png" alt="Logo" className="w-16 h-16" />
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 px-4 py-4 space-y-1">
+        {items.map((it) => {
+          const active = pathname.startsWith(it.href);
+          const Icon = it.icon;
+
+          return (
+            <Link
+              key={it.key}
+              href={it.href}
+              onClick={() => setOpen(false)}
+              className={`relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition
+                ${
+                  active
+                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white"
+                    : "text-slate-300 hover:text-white hover:bg-white/10"
+                }`}
+            >
+              {active && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
+              )}
+              <Icon className="w-5 h-5" />
+              <span className="flex-1">{it.label}</span>
+              <ChevronRight
+                className={`w-4 h-4 transition ${
+                  active ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                }`}
+              />
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Logout */}
+      <div className="p-4 border-t border-slate-700/50">
+        <button
+          onClick={() => setShowLogoutModal(true)}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl
+                     text-red-400 hover:text-red-300
+                     bg-red-500/10 hover:bg-red-500/20 transition"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Logout</span>
+        </button>
+      </div>
+
+      <p className="text-xs text-center text-slate-500 pb-4">
+        v1.0.0 • Admin Panel
+      </p>
+    </>
+  );
+
   return (
     <>
-      {/* SIDEBAR */}
-      <aside
-        className="w-72 fixed left-0 top-0 bottom-0 z-[9999]
-                   bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900
-                   border-r border-slate-700/50 hidden md:flex flex-col shadow-2xl"
-      >
-        {/* Logo Section */}
-        <div className="px-6 py-8 flex items-center justify-center border-b border-slate-700/50">
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl blur-xl opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
-            <div className="relative bg-white/10 backdrop-blur-sm p-3 rounded-2xl border border-white/20">
-              <img 
-                src="/images/Logo.png" 
-                width={70} 
-                height={70} 
-                alt="Logo"
-                className="relative z-10"
-              />
-            </div>
-          </div>
+      {/* ===== MOBILE TOP BAR ===== */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-slate-900 z-[1000] flex items-center px-4">
+        <button onClick={() => setOpen(true)}>
+          <Menu className="w-6 h-6 text-white" />
+        </button>
+        <span className="ml-4 text-white font-semibold">Admin Panel</span>
+      </div>
+
+      {/* ===== MOBILE SIDEBAR ===== */}
+      {open && (
+        <div className="fixed inset-0 z-[9999] flex md:hidden">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setOpen(false)}
+          />
+          <aside className="relative w-72 bg-slate-900 text-white flex flex-col">
+            <button
+              onClick={() => setOpen(false)}
+              className="absolute right-4 top-4"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            {SidebarContent}
+          </aside>
         </div>
+      )}
 
-
-        {/* Navigation */}
-        <nav className="flex-1 flex flex-col gap-2 px-4 py-2 overflow-y-auto">
-          {items.map((it) => {
-            const active = path.startsWith(it.href);
-            const Icon = it.icon;
-
-            return (
-              <Link
-                key={it.key}
-                href={it.href}
-                className={`group relative px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 flex items-center gap-3
-                  ${active
-                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/50"
-                    : "text-slate-300 hover:text-white hover:bg-white/10"
-                  }
-                `}
-              >
-                {active && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full"></div>
-                )}
-
-                <div className={`transition-transform duration-300 ${active ? "" : "group-hover:scale-110"}`}>
-                  <Icon className="w-5 h-5" />
-                </div>
-
-                <span className="flex-1">{it.label}</span>
-
-                <ChevronRight 
-                  className={`w-4 h-4 transition-all duration-300 ${
-                    active 
-                      ? "opacity-100 translate-x-0" 
-                      : "opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0"
-                  }`} 
-                />
-
-                {!active && (
-                  <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-indigo-500/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Logout */}
-        <div className="mt-auto px-4 py-6 border-t border-slate-700/50">
-          <button
-            type="button"
-            onClick={() => setShowLogoutModal(true)}
-            className="group w-full px-4 py-3.5 rounded-xl text-left 
-                       bg-gradient-to-r from-red-500/10 to-rose-500/10 
-                       hover:from-red-500/20 hover:to-rose-500/20 
-                       border border-red-500/30 text-red-400 hover:text-red-300
-                       font-semibold transition-all duration-300 flex items-center gap-3 
-                       hover:scale-105 hover:shadow-lg hover:shadow-red-500/20"
-          >
-            <div className="w-9 h-9 bg-red-500/20 rounded-lg flex items-center justify-center group-hover:bg-red-500/30 transition-colors duration-300">
-              <LogOut className="w-4 h-4" />
-            </div>
-            <span className="flex-1">Logout</span>
-            <ChevronRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
-          </button>
-        </div>
-
-        {/* Version Info */}
-        <div className="px-6 py-3 text-center border-t border-slate-700/50">
-          <p className="text-xs text-slate-500">v1.0.0 • Admin Panel</p>
-        </div>
+      {/* ===== DESKTOP SIDEBAR ===== */}
+      <aside className="hidden md:flex fixed top-0 left-0 bottom-0 w-72
+                        bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900
+                        border-r border-slate-700/50 z-[999] flex-col">
+        {SidebarContent}
       </aside>
 
-      {/* ---------------------------------------------------------------- */}
-      {/* LOGOUT CONFIRM MODAL */}
-      {/* ---------------------------------------------------------------- */}
+      {/* ===== LOGOUT MODAL ===== */}
       {showLogoutModal && (
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-          {/* Overlay */}
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/50"
             onClick={() => setShowLogoutModal(false)}
           />
-
-          {/* Modal */}
-          <div className="relative bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 z-[10001] animate-fadeIn">
-            <h2 className="text-xl font-semibold text-slate-900">Confirm Logout</h2>
-            <p className="mt-2 text-sm text-slate-600">
-              Are you sure you want to logout from admin panel?
+          <div className="relative bg-white rounded-xl w-full max-w-sm p-6">
+            <h2 className="text-lg font-semibold">Confirm Logout</h2>
+            <p className="text-sm text-slate-600 mt-2">
+              Are you sure you want to logout?
             </p>
 
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="px-4 py-2 rounded-md border text-slate-700 hover:bg-slate-50"
+                className="px-4 py-2 border rounded-md"
               >
                 Cancel
               </button>
-
               <button
-                onClick={handleLogoutConfirm}
-                className="px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700"
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 text-white rounded-md"
               >
-                Yes, Logout
+                Logout
               </button>
             </div>
           </div>

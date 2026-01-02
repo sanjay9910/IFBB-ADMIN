@@ -22,12 +22,12 @@ interface Inquiry {
 }
 
 const navItems = [
-  { key: "users", label: "Users", href: "/admin/users" },
-  { key: "brands", label: "Brand Logo", href: "/admin/brands" },
-  { key: "courses", label: "Course", href: "/admin/courses" },
-  { key: "certificates", label: "Certificate", href: "/admin/certificates" },
-  { key: "news", label: "News", href: "/admin/news" },
-  { key: "settings", label: "Setting", href: "/admin/settings" },
+  { key: "users", label: "Users", href: "/dashboard/users" },
+  { key: "brands", label: "Brand Logo", href: "/dashboard/brands" },
+  { key: "courses", label: "Course", href: "/dashboard/courses" },
+  { key: "certificates", label: "Certificate", href: "/dashboard/certificate" },
+  { key: "news", label: "News", href: "/dashboard/news" },
+  { key: "settings", label: "Setting", href: "/dashboard/setting" },
 ];
 
 const API_BASE_URL = "https://ifbb-1.onrender.com/api";
@@ -159,7 +159,6 @@ export default function Header() {
     return () => document.removeEventListener("click", onDocClick);
   }, []);
 
-  // Close notification dropdown on outside click
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (!notificationRef.current) return;
@@ -169,7 +168,6 @@ export default function Header() {
     return () => document.removeEventListener("click", onDocClick);
   }, []);
 
-  // Handle logout confirm
   const handleLogoutConfirm = () => {
     logout();
     setShowLogoutModal(false);
@@ -261,7 +259,7 @@ export default function Header() {
               <Menu className="w-5 h-5 text-slate-700" />
             </button>
 
-            <div className="flex items-center gap-3">
+            <div className="flex ml-[270px] items-center gap-3">
               <div className="flex items-center gap-2">
                 <Image 
                   src="/images/Logo.png" 
@@ -408,7 +406,7 @@ export default function Header() {
                                 Course: {inquiry.course}
                               </p>
                               <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                                <span>📅</span>
+                                {/* <span>📅</span> */}
                                 {formatDate(inquiry.createdAt)}
                               </p>
                             </div>
@@ -550,7 +548,7 @@ export default function Header() {
             onClick={() => setMobileOpen(false)} 
           />
 
-          <aside className="fixed inset-y-0 left-0 w-80 max-w-full bg-white z-50 shadow-lg p-4 overflow-auto">
+          <aside className="fixed inset-y-0 left-0 w-80 bg-white z-50 shadow-lg p-4 overflow-auto">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Image 

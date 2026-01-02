@@ -4,14 +4,15 @@ export const apiCall = async (
   options: RequestInit = {},
   token?: string
 ) => {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
+  // ✅ Type-safe headers object
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string> | undefined),
   };
 
-  // Add token if available
+  // ✅ Add token if available
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
 
   const response = await fetch(url, {
@@ -19,27 +20,43 @@ export const apiCall = async (
     headers,
   });
 
+  // ✅ Error handling
   if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(error.message || `API Error: ${response.status}`);
+    let errorMessage = `API Error: ${response.status}`;
+
+    try {
+      const errorData = await response.json();
+      if (errorData?.message) {
+        errorMessage = errorData.message;
+      }
+    } catch (_) {
+      // ignore JSON parse error
+    }
+
+    throw new Error(errorMessage);
   }
 
   return response.json();
 };
 
-// Hook for getting token from localStorage (Client-side only)
+// ================================
+// Hook for getting token from localStorage
+// (Client-side only)
+// ================================
 export const getTokenFromStorage = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  
+  if (typeof window === "undefined") return null;
+
   try {
-    const persistedState = localStorage.getItem('persist:root');
+    const persistedState = localStorage.getItem("persist:root");
     if (!persistedState) return null;
-    
-    const state = JSON.parse(persistedState);
-    const authState = JSON.parse(state.auth);
-    return authState.token || null;
+
+    const rootState = JSON.parse(persistedState);
+    if (!rootState.auth) return null;
+
+    const authState = JSON.parse(rootState.auth);
+    return authState?.token ?? null;
   } catch (error) {
-    console.error('Error reading token from storage:', error);
+    console.error("Error reading token from storage:", error);
     return null;
   }
 };

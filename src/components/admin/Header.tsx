@@ -33,7 +33,9 @@ const navItems = [
 const API_BASE_URL = "https://ifbb-1.onrender.com/api";
 
 export default function Header() {
-  const { token, logout, user } = useAuth();
+ const { token, logout } = useAuth();
+
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -304,7 +306,7 @@ export default function Header() {
                 <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-2 z-[100]">
                   <div className="px-4 py-2 border-b">
                     <div className="text-sm font-medium text-slate-900 truncate">
-                      {user?.email || "sanjay@gmail.com"}
+                      admin@gmail.com
                     </div>
                     <div className="text-xs text-slate-500 truncate">
                       Admin User
@@ -561,7 +563,7 @@ export default function Header() {
                 <div>
                   <div className="font-medium text-slate-800">IFBB Admin</div>
                   <div className="text-sm text-slate-500">
-                    {user?.email || "sanjay@gmail.com"}
+                    admin@gmail.com
                   </div>
                 </div>
               </div>

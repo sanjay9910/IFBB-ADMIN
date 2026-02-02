@@ -30,7 +30,7 @@ const navItems = [
   { key: "settings", label: "Setting", href: "/dashboard/setting" },
 ];
 
-const API_BASE_URL = "https://ifbb-1.onrender.com/api";
+const API_BASE_URL = "https://ifbb-master.onrender.com/api";
 
 export default function Header() {
  const { token, logout } = useAuth();

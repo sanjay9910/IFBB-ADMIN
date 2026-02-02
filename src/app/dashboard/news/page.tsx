@@ -16,7 +16,7 @@ type NewsItem = {
 };
 
 /* ================= CONFIG ================= */
-const API_BASE_URL = "https://ifbb-1.onrender.com/api";
+const API_BASE_URL = "https://ifbb-master.onrender.com/api";
 const API_POST = `${API_BASE_URL}/admin/news`;
 const API_GET = `${API_BASE_URL}/news`;
 const API_DELETE = `${API_BASE_URL}/admin/news`;

@@ -17,7 +17,7 @@ type ImageWithSize = GalleryImage & {
 };
 
 /* ------------- Constants ------------- */
-const API_BASE_URL = "https://ifbb-1.onrender.com/api";
+const API_BASE_URL = "https://ifbb-master.onrender.com/api";
 
 /* ------------- Helper Functions ------------- */
 async function getImageSize(url: string): Promise<number> {

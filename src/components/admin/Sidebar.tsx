@@ -23,6 +23,7 @@ const items = [
   { key: "brands", label: "Brand Logo", href: "/dashboard/brands", icon: Award },
   { key: "courses", label: "Courses", href: "/dashboard/courses", icon: BookOpen },
   { key: "certificates", label: "Certificates", href: "/dashboard/certificate", icon: FileText },
+  { key: "certificates", label: "Exam", href: "/dashboard/exam", icon: FileText },
   { key: "news", label: "News", href: "/dashboard/news", icon: Newspaper },
   { key: "notification", label: "Notification", href: "/dashboard/notification", icon: Bell },
   { key: "gallery", label: "Gallery", href: "/dashboard/galleryImag", icon: ImageIcon },

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Users,
   Award,
@@ -33,15 +34,16 @@ const items = [
 export default function Sidebar() {
   const pathname = usePathname() || "/";
   const router = useRouter();
+   const { logout } = useAuth();
 
   const [open, setOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout= () => {
+    logout();
     setShowLogoutModal(false);
-    router.push("/login");
+    router.push("/auth/login");
   };
-
   const SidebarContent = (
     <>
       {/* Logo */}

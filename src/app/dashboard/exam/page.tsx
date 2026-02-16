@@ -273,7 +273,7 @@ export default function ExamManagerPage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Course Chune</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Course Select</label>
                   <div className="relative">
                     <select
                       value={selectedCourseId}
@@ -293,7 +293,7 @@ export default function ExamManagerPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Module Chune</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Module Select</label>
                   <div className="relative">
                     <select
                       value={selectedModuleId}
@@ -318,13 +318,13 @@ export default function ExamManagerPage() {
                   <div className="space-y-6">
                     <div className="flex items-center justify-between">
                       <h2 className="text-2xl font-bold text-gray-800">Questions</h2>
-                      <button
+                      {/* <button
                         type="button"
                         onClick={addQuestion}
                         className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-sm"
                       >
                         <Plus className="h-5 w-5" /> Add Question
-                      </button>
+                      </button> */}
                     </div>
 
                     {questions.map((q, idx) => (
@@ -345,7 +345,7 @@ export default function ExamManagerPage() {
                             type="text"
                             value={q.question}
                             onChange={e => updateQuestionText(idx, e.target.value)}
-                            placeholder="Question yahan likhein..."
+                            placeholder="Write Question here..."
                             className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
                             required
                           />
@@ -376,6 +376,14 @@ export default function ExamManagerPage() {
                     ))}
                   </div>
 
+                   <button
+                        type="button"
+                        onClick={addQuestion}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-sm"
+                      >
+                        <Plus className="h-5 w-5" /> Add Question
+                      </button>
+
                   <div className="pt-6 border-t">
                     <button
                       type="submit"
@@ -388,7 +396,7 @@ export default function ExamManagerPage() {
                           Saving...
                         </>
                       ) : (
-                        'Test Save Karo'
+                        'Save Question'
                       )}
                     </button>
                   </div>

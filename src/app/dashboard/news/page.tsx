@@ -222,7 +222,7 @@ export default function NewsManagerPage() {
 
         {/* ================= STATUS MESSAGES ================= */}
         {(error || success) && (
-          <div className={`p-4 rounded-xl ${error ? 'bg-red-50 border border-red-200' : 'bg-emerald-50 border border-emerald-200'}`}>
+          <div className={`p-4 rounded ${error ? 'bg-red-50 border border-red-200' : 'bg-emerald-50 border border-emerald-200'}`}>
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-full ${error ? 'bg-red-100' : 'bg-emerald-100'}`}>
                 {error ? (
@@ -250,7 +250,7 @@ export default function NewsManagerPage() {
         )}
 
         {/* ================= CREATE NEWS SECTION ================= */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded overflow-hidden">
           <div className="p-6 border-b border-slate-200">
             <h1 className="text-2xl font-bold text-slate-900">
               Create News Article
@@ -275,7 +275,7 @@ export default function NewsManagerPage() {
                       setError(null);
                     }}
                     placeholder="Enter news headline"
-                    className="w-full border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                    className="w-full border border-slate-300 rounded px-4 py-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
                   />
                 </div>
 
@@ -291,7 +291,7 @@ export default function NewsManagerPage() {
                     }}
                     placeholder="Write detailed news content here..."
                     rows={6}
-                    className="w-full border border-slate-300 rounded-lg px-4 py-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none"
+                    className="w-full border border-slate-300 rounded px-4 py-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none"
                   />
                 </div>
 
@@ -312,14 +312,14 @@ export default function NewsManagerPage() {
                   <div className="flex gap-3">
                     <button
                       onClick={clearForm}
-                      className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
+                      className="px-4 py-2 border border-slate-300 text-slate-700 rounded hover:bg-slate-50 transition"
                     >
                       Clear
                     </button>
                     <button
                       onClick={handlePublish}
                       disabled={loading || !title.trim() || !description.trim()}
-                      className={`px-6 py-2 rounded-lg font-medium transition ${
+                      className={`px-6 py-2 rounded font-medium transition ${
                         loading || !title.trim() || !description.trim()
                           ? "bg-slate-200 text-slate-400 cursor-not-allowed"
                           : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
@@ -347,13 +347,13 @@ export default function NewsManagerPage() {
                   News Image (Optional)
                 </label>
                 
-                <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 hover:border-indigo-400 transition cursor-pointer bg-gradient-to-br from-slate-50 to-white">
+                <div className="border-2 border-dashed border-slate-300 rounded p-6 hover:border-indigo-400 transition cursor-pointer bg-gradient-to-br from-slate-50 to-white">
                   {imagePreview ? (
                     <div className="relative">
                       <img
                         src={imagePreview}
                         alt="preview"
-                        className="w-full h-64 object-cover rounded-lg"
+                        className="w-full h-64 object-cover rounded"
                       />
                       <button
                         onClick={() => {
@@ -391,7 +391,7 @@ export default function NewsManagerPage() {
                   <div className="mt-4 text-center">
                     <button
                       onClick={() => fileRef.current?.click()}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm font-medium transition"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -415,7 +415,7 @@ export default function NewsManagerPage() {
         </div>
 
         {/* ================= NEWS LIST SECTION ================= */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="bg-white rounded overflow-hidden">
           <div className="p-6 border-b border-slate-200">
             <div className="flex items-center justify-between">
               <div>
@@ -427,7 +427,7 @@ export default function NewsManagerPage() {
               <button
                 onClick={fetchNews}
                 disabled={loading}
-                className="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Refreshing..." : "Refresh List"}
               </button>
@@ -450,7 +450,7 @@ export default function NewsManagerPage() {
                 {newsList.map((news) => (
                   <div
                     key={news._id}
-                    className="bg-gradient-to-b from-white to-slate-50 border border-slate-200 rounded-xl overflow-hidden hover:shadow-lg transition-all"
+                    className="bg-gradient-to-b from-white to-slate-50 border border-slate-200 rounded overflow-hidden hover:shadow-lg transition-all"
                   >
                     {/* News Image */}
                     {news.imageUrl && (
@@ -487,7 +487,7 @@ export default function NewsManagerPage() {
                           <button
                             onClick={() => window.open(news.imageUrl, '_blank')}
                             disabled={!news.imageUrl}
-                            className={`text-xs px-3 py-1 rounded-lg ${
+                            className={`text-xs px-3 py-1 rounded ${
                               news.imageUrl 
                                 ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' 
                                 : 'bg-slate-50 text-slate-400 cursor-not-allowed'
@@ -498,7 +498,7 @@ export default function NewsManagerPage() {
                           <button
                             onClick={() => deleteNews(news._id)}
                             disabled={deletingId === news._id}
-                            className={`text-xs px-3 py-1 rounded-lg ${
+                            className={`text-xs px-3 py-1 rounded ${
                               deletingId === news._id
                                 ? 'bg-red-100 text-red-700'
                                 : 'bg-red-50 text-red-600 hover:bg-red-100'

@@ -95,11 +95,11 @@ export default function CertificateManager() {
         onProgress(pct);
       }, 160);
 
-      console.log("🔵 Uploading certificate:", { 
-        fileName: file.name, 
-        category, 
-        tokenLength: token.length 
-      });
+      // console.log("🔵 Uploading certificate:", { 
+      //   fileName: file.name, 
+      //   category, 
+      //   tokenLength: token.length 
+      // });
 
       const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.uploadEndpoint}`, {
         method: "POST",
@@ -124,7 +124,7 @@ export default function CertificateManager() {
       }
 
       const result = await response.json();
-      console.log("✅ Upload successful:", result);
+      // console.log("✅ Upload successful:", result);
 
       return {
         success: true,
@@ -146,7 +146,7 @@ export default function CertificateManager() {
       setLoading(true);
       setError(null);
 
-      console.log("🔵 Fetching certificates for:", category);
+      // console.log("🔵 Fetching certificates for:", category);
 
       const response = await fetch(
         `${API_CONFIG.baseUrl}${API_CONFIG.fetchEndpoint}?category=${category}`
@@ -174,7 +174,7 @@ export default function CertificateManager() {
       }));
 
       setUploadedCertificates(certificates);
-      console.log("✅ Certificates fetched:", certificates.length);
+      // console.log("✅ Certificates fetched:", certificates.length);
       return certificates;
     } catch (err) {
       console.error("❌ Fetch error:", err);
@@ -200,7 +200,7 @@ export default function CertificateManager() {
     try {
       setDeletingId(certificateId);
 
-      console.log("🔵 Deleting certificate:", { certificateId, publicId });
+      // console.log("🔵 Deleting certificate:", { certificateId, publicId });
 
       const response = await fetch(
         `${API_CONFIG.baseUrl}${API_CONFIG.deleteEndpoint}/${certificateId}`,
@@ -234,7 +234,7 @@ export default function CertificateManager() {
       // Refresh list
       await fetchCertificatesByCategory(selectedCategory);
 
-      console.log("✅ Certificate deleted successfully");
+      // console.log("✅ Certificate deleted successfully");
       return true;
     } catch (err) {
       console.error("❌ Delete error:", err);
@@ -504,7 +504,7 @@ export default function CertificateManager() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-10 px-4">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200">
+        <div className="bg-white rounded  overflow-hidden border border-slate-200">
           {/* Top controls section */}
           <div className="p-8 border-b border-slate-100 bg-gradient-to-r from-white to-slate-50">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -534,7 +534,7 @@ export default function CertificateManager() {
                       setError(null);
                       setSuccess(null);
                     }}
-                    className="w-full px-4 py-2.5 rounded-lg border border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
+                    className="w-full px-4 py-2.5 rounded border border-slate-300 bg-white text-slate-900 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
                   >
                     {CATEGORIES.map((cat) => (
                       <option key={cat} value={cat}>
@@ -547,7 +547,7 @@ export default function CertificateManager() {
                 <div className="flex items-end gap-3">
                   <button
                     onClick={() => inputRef.current?.click()}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all bg-gradient-to-r from-sky-600 to-sky-500 text-white hover:from-sky-700 hover:to-sky-600 shadow-lg shadow-sky-100"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded font-semibold transition-all bg-gradient-to-r from-sky-600 to-sky-500 text-white hover:from-sky-700 hover:to-sky-600 shadow-lg shadow-sky-100"
                   >
                     <svg
                       className="w-5 h-5"
@@ -568,7 +568,7 @@ export default function CertificateManager() {
                   <button
                     onClick={startUploadAll}
                     disabled={files.length === 0 || uploading}
-                    className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                    className={`px-6 py-3 rounded font-semibold transition-all ${
                       files.length === 0 || uploading
                         ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                         : "bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:from-emerald-700 hover:to-emerald-600 shadow-lg shadow-emerald-100"
@@ -608,7 +608,7 @@ export default function CertificateManager() {
             {/* Status messages */}
             {(error || success) && (
               <div
-                className={`mt-4 p-4 rounded-lg ${
+                className={`mt-4 p-4 rounded ${
                   error
                     ? "bg-red-50 border border-red-200"
                     : "bg-emerald-50 border border-emerald-200"
@@ -680,7 +680,7 @@ export default function CertificateManager() {
               onDrop={onDrop}
               onDragOver={onDragOver}
               onDragLeave={onDragLeave}
-              className={`relative rounded-xl border-3 border-dashed p-8 mb-10 transition-all duration-300 ${
+              className={`relative rounded border-3 border-dashed p-8 mb-10 transition-all duration-300 ${
                 dragActive
                   ? "border-sky-400 bg-gradient-to-br from-sky-50 to-white shadow-lg"
                   : "border-slate-300 bg-gradient-to-br from-white to-slate-50"
@@ -734,7 +734,7 @@ export default function CertificateManager() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-slate-50 to-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div className="bg-gradient-to-br from-slate-50 to-white p-6 rounded border border-slate-200 shadow-sm">
                   <div className="text-center">
                     <div className="text-sm font-medium text-slate-500 mb-1">
                       Selected for Upload
@@ -751,7 +751,7 @@ export default function CertificateManager() {
 
               {dragActive && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <div className="bg-white/90 backdrop-blur-sm text-sky-700 px-6 py-4 rounded-xl font-bold text-lg shadow-2xl border border-sky-200">
+                  <div className="bg-white/90 backdrop-blur-sm text-sky-700 px-6 py-4 rounded font-bold text-lg shadow-2xl border border-sky-200">
                     Release to upload to {selectedCategory}
                   </div>
                 </div>
@@ -761,7 +761,7 @@ export default function CertificateManager() {
             {/* Two-column layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Upload Queue */}
-              <div className="bg-gradient-to-b from-white to-slate-50 rounded-xl border border-slate-200 p-6">
+              <div className="bg-gradient-to-b from-white to-slate-50 rounded border border-slate-200 p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-bold text-slate-900">
                     Upload Queue
@@ -789,11 +789,11 @@ export default function CertificateManager() {
                     {files.map((fileItem, index) => (
                       <div
                         key={fileItem.id}
-                        className="bg-white rounded-lg border border-slate-200 p-4 hover:border-slate-300 transition-all"
+                        className="bg-white rounded border border-slate-200 p-4 hover:border-slate-300 transition-all"
                       >
                         <div className="flex items-start gap-4">
                           {/* Preview */}
-                          <div className="w-20 h-20 rounded-md overflow-hidden bg-slate-100 flex items-center justify-center flex-shrink-0">
+                          <div className="w-20 h-20 rounded overflow-hidden bg-slate-100 flex items-center justify-center flex-shrink-0">
                             <img
                               src={fileItem.url}
                               alt={fileItem.name}
@@ -891,7 +891,7 @@ export default function CertificateManager() {
                                 disabled={
                                   fileItem.primary || fileItem.uploaded
                                 }
-                                className={`px-3 py-1.5 text-sm rounded-lg ${
+                                className={`px-3 py-1.5 text-sm rounded ${
                                   fileItem.primary || fileItem.uploaded
                                     ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                                     : "bg-sky-600 text-white hover:bg-sky-700"
@@ -903,7 +903,7 @@ export default function CertificateManager() {
                               </button>
                               <button
                                 onClick={() => removeFile(fileItem.id)}
-                                className="px-3 py-1.5 text-sm rounded-lg border border-slate-300 text-red-600 hover:bg-red-50"
+                                className="px-3 py-1.5 text-sm rounded border border-slate-300 text-red-600 hover:bg-red-50"
                               >
                                 Remove
                               </button>
@@ -917,7 +917,7 @@ export default function CertificateManager() {
               </div>
 
               {/* Existing Certificates */}
-              <div className="bg-gradient-to-b from-white to-slate-50 rounded-xl border border-slate-200 p-6">
+              <div className="bg-gradient-to-b from-white to-slate-50 rounded border border-slate-200 p-6">
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-lg font-bold text-slate-900">
@@ -1015,11 +1015,11 @@ export default function CertificateManager() {
                     {uploadedCertificates.map((cert) => (
                       <div
                         key={cert.id}
-                        className="bg-white rounded-lg border border-slate-200 p-4 hover:border-slate-300 transition-all group"
+                        className="bg-white rounded border border-slate-200 p-4 hover:border-slate-300 transition-all group"
                       >
                         <div className="flex items-start gap-4">
                           {/* Certificate preview */}
-                          <div className="w-20 h-20 rounded-md overflow-hidden bg-slate-100 flex items-center justify-center flex-shrink-0 relative">
+                          <div className="w-20 h-20 rounded overflow-hidden bg-slate-100 flex items-center justify-center flex-shrink-0 relative">
                             {cert.url ? (
                               <>
                                 <img
@@ -1109,7 +1109,7 @@ export default function CertificateManager() {
                                     href={cert.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="p-1.5 text-slate-600 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors"
+                                    className="p-1.5 text-slate-600 hover:text-sky-600 hover:bg-sky-50 rounded transition-colors"
                                     title="View certificate"
                                   >
                                     <svg
@@ -1138,7 +1138,7 @@ export default function CertificateManager() {
                                       deleteCertificate(cert.id, cert.publicId)
                                     }
                                     disabled={deletingId === cert.id}
-                                    className={`p-1.5 rounded-lg transition-colors ${
+                                    className={`p-1.5 rounded transition-colors ${
                                       deletingId === cert.id
                                         ? "text-amber-600 bg-amber-50"
                                         : "text-red-600 hover:text-red-700 hover:bg-red-50"

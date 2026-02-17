@@ -239,7 +239,7 @@ export default function ExamManagerPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+      <div className="max-w-5xl mx-auto bg-white rounded overflow-hidden border border-gray-200">
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-8 py-6 text-black">
           <h1 className="text-3xl text-white font-bold">Add Modules Test</h1>
           <p className="mt-2 text-white opacity-90">For Any Modules, Add Test Here.</p>
@@ -247,7 +247,7 @@ export default function ExamManagerPage() {
 
         <div className="p-6 lg:p-8">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-center gap-3">
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded flex items-center gap-3">
               <AlertCircle className="h-5 w-5" />
               <span>{error}</span>
             </div>
@@ -255,7 +255,7 @@ export default function ExamManagerPage() {
 
           {submitStatus && (
             <div
-              className={`mb-6 p-4 rounded-lg flex items-center gap-3 whitespace-pre-wrap ${
+              className={`mb-6 p-4 rounded flex items-center gap-3 whitespace-pre-wrap ${
                 submitStatus.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
               }`}
             >
@@ -281,7 +281,7 @@ export default function ExamManagerPage() {
                         setSelectedCourseId(e.target.value);
                         setSelectedModuleId('');
                       }}
-                      className="w-full px-4 py-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                      className="w-full px-4 py-3 border border-gray-300 text-black rounded focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                     >
                       <option value="">Course select</option>
                       {courses.map(c => (
@@ -299,7 +299,7 @@ export default function ExamManagerPage() {
                       value={selectedModuleId}
                       onChange={e => setSelectedModuleId(e.target.value)}
                       disabled={!selectedCourseId}
-                      className="w-full px-4 py-3 border border-gray-300 text-black rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none disabled:bg-gray-100 bg-white"
+                      className="w-full px-4 py-3 border border-gray-300 text-black rounded focus:ring-2 focus:ring-blue-500 appearance-none disabled:bg-gray-100 bg-white"
                     >
                       <option value="">Module select</option>
                       {selectedCourse?.modules.map(m => (
@@ -328,7 +328,7 @@ export default function ExamManagerPage() {
                     </div>
 
                     {questions.map((q, idx) => (
-                      <div key={idx} className="bg-white text-black border rounded-xl p-6 relative shadow-sm">
+                      <div key={idx} className="bg-white text-black border rounded p-6 relative shadow-sm">
                         {questions.length > 1 && (
                           <button
                             type="button"
@@ -346,14 +346,14 @@ export default function ExamManagerPage() {
                             value={q.question}
                             onChange={e => updateQuestionText(idx, e.target.value)}
                             placeholder="Write Question here..."
-                            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-4 py-3 border rounded focus:ring-2 focus:ring-blue-500"
                             required
                           />
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {q.options.map((opt, oIdx) => (
-                            <div key={oIdx} className="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
+                            <div key={oIdx} className="flex items-center gap-3 bg-gray-50 p-3 rounded">
                               <input
                                 type="radio"
                                 name={`correct-${idx}`}
@@ -379,7 +379,7 @@ export default function ExamManagerPage() {
                    <button
                         type="button"
                         onClick={addQuestion}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium shadow-sm"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded font-medium shadow-sm"
                       >
                         <Plus className="h-5 w-5" /> Add Question
                       </button>
@@ -388,7 +388,7 @@ export default function ExamManagerPage() {
                     <button
                       type="submit"
                       disabled={submitting}
-                      className={`w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg flex items-center justify-center gap-3 disabled:opacity-60`}
+                      className={`w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded flex items-center justify-center gap-3 disabled:opacity-60`}
                     >
                       {submitting ? (
                         <>

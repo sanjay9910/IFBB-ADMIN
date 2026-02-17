@@ -137,13 +137,13 @@ const NotificationPage = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">Notifications</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Notifications</h1>
           <p className="text-slate-600">Manage course inquiry submissions and track their status</p>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center space-x-3">
+          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded flex items-center space-x-3">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
             <span>{error}</span>
             <button
@@ -161,7 +161,7 @@ const NotificationPage = () => {
             <button
               key={status}
               onClick={() => setFilterStatus(status)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`px-4 py-2 rounded font-medium transition-all ${
                 filterStatus === status
                   ? 'bg-[#2424B9] text-white shadow-lg'
                   : 'bg-white text-slate-700 border border-slate-300 hover:border-[#2424B9] hover:text-[#2424B9]'
@@ -175,7 +175,7 @@ const NotificationPage = () => {
 
         {/* No Data Message */}
         {filteredInquiries.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg border border-slate-200">
+          <div className="text-center py-12 bg-white rounded border border-slate-200">
             <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
             <p className="text-slate-600 text-lg">No inquiries found</p>
           </div>
@@ -187,7 +187,7 @@ const NotificationPage = () => {
                 <div
                   key={inquiry._id}
                   onClick={() => setSelectedInquiry(inquiry)}
-                  className="bg-white rounded-lg border border-slate-200 hover:shadow-lg hover:border-[#2424B9] transition-all cursor-pointer overflow-hidden"
+                  className="bg-white rounded border border-slate-200 hover:shadow-lg hover:border-[#2424B9] transition-all cursor-pointer overflow-hidden"
                 >
                   <div className={`h-2 ${getStatusColor(inquiry.status).split(' ')[0]}`} />
                   <div className="p-6">
@@ -239,7 +239,7 @@ const NotificationPage = () => {
                 <div
                   key={inquiry._id}
                   onClick={() => setSelectedInquiry(inquiry)}
-                  className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow hover:shadow-md transition-shadow cursor-pointer"
+                  className="bg-white rounded border border-slate-200 overflow-hidden shadow hover:shadow-md transition-shadow cursor-pointer"
                 >
                   <div className={`h-1 ${getStatusColor(inquiry.status).split(' ')[0]}`} />
                   <div className="p-4">
@@ -267,7 +267,7 @@ const NotificationPage = () => {
         {/* Detail Modal */}
         {selectedInquiry && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className={`h-1 ${getStatusColor(selectedInquiry.status).split(' ')[0]}`} />
               <div className="p-6">
                 <div className="flex items-start justify-between mb-6">
@@ -286,7 +286,7 @@ const NotificationPage = () => {
                 </div>
 
                 <div
-                  className={`mb-6 px-4 py-2 rounded-lg border font-semibold flex items-center space-x-2 w-fit ${getStatusColor(
+                  className={`mb-6 px-4 py-2 rounded border font-semibold flex items-center space-x-2 w-fit ${getStatusColor(
                     selectedInquiry.status
                   )}`}
                 >
@@ -338,7 +338,7 @@ const NotificationPage = () => {
 
                   <div>
                     <label className="text-xs font-semibold text-slate-500 uppercase">Message</label>
-                    <p className="text-slate-900 mt-2 bg-slate-50 p-4 rounded-lg">{selectedInquiry.message}</p>
+                    <p className="text-slate-900 mt-2 bg-slate-50 p-4 rounded">{selectedInquiry.message}</p>
                   </div>
 
                   <div className="flex items-center space-x-2 text-sm">
@@ -351,7 +351,7 @@ const NotificationPage = () => {
 
                 <button
                   onClick={() => setSelectedInquiry(null)}
-                  className="mt-6 w-full bg-[#2424B9] hover:bg-blue-800 text-white font-semibold py-2 rounded-lg transition-colors"
+                  className="mt-6 w-full bg-[#2424B9] hover:bg-blue-800 text-white font-semibold py-2 rounded transition-colors"
                 >
                   Close
                 </button>

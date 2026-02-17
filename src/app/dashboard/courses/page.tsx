@@ -260,7 +260,7 @@ function Pill({ children, className = "" }: { children: React.ReactNode; classNa
 
 function StatCard({ label, value, icon }: { label: string; value: string | number; icon: React.ReactNode }) {
   return (
-    <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-xl p-4">
+    <div className="bg-gradient-to-br from-white border border-slate-200 rounded p-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm text-slate-600 font-medium">{label}</p>
@@ -745,7 +745,7 @@ export default function CoursesAdminPage() {
             </div>
             <button
               onClick={openNewCourse}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded   transition-all duration-200 font-medium"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -779,7 +779,7 @@ export default function CoursesAdminPage() {
           </div>
 
           {/* Search and Filters */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6 shadow-sm">
+          <div className="bg-white rounded border  border-slate-200 p-4 mb-6 shadow-sm">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
               <div className="relative flex-1 max-w-2xl">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -791,7 +791,7 @@ export default function CoursesAdminPage() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search courses, tags, or descriptions..."
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                 />
                 {query && (
                   <button
@@ -807,7 +807,7 @@ export default function CoursesAdminPage() {
                 <div className="flex bg-slate-100 p-1 rounded-lg">
                   <button
                     onClick={() => setViewMode("grid")}
-                    className={`px-3 py-2 rounded-md ${viewMode === "grid" ? "bg-white shadow" : "text-slate-600"}`}
+                    className={`px-3 py-2 rounded ${viewMode === "grid" ? "bg-white shadow" : "text-slate-600"}`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -815,7 +815,7 @@ export default function CoursesAdminPage() {
                   </button>
                   <button
                     onClick={() => setViewMode("list")}
-                    className={`px-3 py-2 rounded-md ${viewMode === "list" ? "bg-white shadow" : "text-slate-600"}`}
+                    className={`px-3 py-2 rounded ${viewMode === "list" ? "bg-white shadow" : "text-slate-600"}`}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
@@ -841,7 +841,7 @@ export default function CoursesAdminPage() {
               {filtered.map((c) => (
                 <div
                   key={c._id}
-                  className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                  className="group bg-white rounded border border-slate-200 overflow-hidden shadow-sm  transition-all duration-300"
                 >
                   {/* Course Image */}
                   <div className="relative h-48 overflow-hidden">
@@ -853,20 +853,20 @@ export default function CoursesAdminPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                     
                     {/* Status Badges */}
-                    <div className="absolute top-4 left-4 flex gap-2">
-                      <Pill className={`${c.published ? "bg-emerald-500 text-white" : "bg-slate-600 text-white"}`}>
+                    <div className="absolute top-2   left-2 flex gap-2">
+                      {/* <Pill className={`${c.published ? "bg-emerald-500 text-white" : "bg-slate-600 text-white"}`}>
                         {c.published ? "Published" : "Draft"}
-                      </Pill>
+                      </Pill> */}
                       <Pill className={`${c.isPublic ? "bg-blue-500 text-white" : "bg-slate-500 text-white"}`}>
                         {c.isPublic ? "Public" : "Private"}
                       </Pill>
                     </div>
 
                     {/* Price Tag */}
-                    <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
-                      <div className="text-sm text-slate-500">Price</div>
+                    <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm rounded px-2 py-1 shadow-lg">
+                      {/* <div className="text-sm text-slate-500">Price</div> */}
                       <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold text-slate-900">${formatPrice(c.price)}</span>
+                        <span className="text-sm font-bold text-slate-900">${formatPrice(c.price)}</span>
                         {c.discountedPrice && (
                           <span className="text-sm text-slate-400 line-through">${formatPrice(c.discountedPrice)}</span>
                         )}
@@ -913,28 +913,28 @@ export default function CoursesAdminPage() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2 pt-4 border-t border-slate-100">
+                    <div className="flex gap-2 pt-2 border-t border-slate-100">
                       <button
                         onClick={() => setSelectedCourse(c)}
-                        className="flex-1 px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-sm font-medium transition"
+                        className="flex-2 px-1 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded text-sm font-medium transition"
                       >
                         View Details
                       </button>
                       <button
                         onClick={() => toggleVisibility(c._id)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium transition ${c.isPublic ? 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700' : 'bg-green-50 hover:bg-green-100 text-green-700'}`}
+                        className={`px-2 py-1 rounded text-sm font-medium transition ${c.isPublic ? 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700' : 'bg-green-50 hover:bg-green-100 text-green-700'}`}
                       >
                         {c.isPublic ? 'Make Private' : 'Make Public'}
                       </button>
                       <button
                         onClick={() => openEditCourse(c)}
-                        className="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium transition"
+                        className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-sm font-medium transition"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => onDelete(c._id)}
-                        className="px-3 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm font-medium transition"
+                        className="px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded text-sm font-medium transition"
                       >
                         Delete
                       </button>
@@ -951,14 +951,14 @@ export default function CoursesAdminPage() {
 
         {!loading && viewMode === "list" && (
           <>
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="bg-white rounded border border-slate-200 overflow-hidden shadow-sm">
               {filtered.map((c) => (
                 <div
                   key={c._id}
                   className="p-5 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-24 h-16 rounded-lg overflow-hidden flex-shrink-0">
+                    <div className="w-24 h-16 rounded overflow-hidden flex-shrink-0">
                       <img src={c.courseThumbnail || PLACEHOLDER} alt={c.title} className="w-full h-full object-cover" />
                     </div>
                     
@@ -966,7 +966,7 @@ export default function CoursesAdminPage() {
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-bold text-slate-900">{c.title}</h3>
                         <div className="flex items-center gap-4">
-                          <span className="text-lg font-bold text-slate-900">${formatPrice(c.price)}</span>
+                          <span className="text-sm font-bold text-slate-900">${formatPrice(c.price)}</span>
                           <div className="flex items-center gap-2">
                             <Pill className={`${c.published ? "bg-emerald-500 text-white" : "bg-slate-500 text-white"}`}>
                               {c.published ? "Published" : "Draft"}
@@ -992,19 +992,19 @@ export default function CoursesAdminPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => toggleVisibility(c._id)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${c.isPublic ? 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700' : 'bg-green-50 hover:bg-green-100 text-green-700'}`}
+                        className={`px-2 py-1 rounded text-sm font-medium transition ${c.isPublic ? 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700' : 'bg-green-50 hover:bg-green-100 text-green-700'}`}
                       >
                         {c.isPublic ? 'Private' : 'Public'}
                       </button>
                       <button
                         onClick={() => openEditCourse(c)}
-                        className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg text-sm font-medium transition"
+                        className="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded text-sm font-medium transition"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => setSelectedCourse(c)}
-                        className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition"
+                        className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-sm font-medium transition"
                       >
                         View
                       </button>
@@ -1026,7 +1026,7 @@ export default function CoursesAdminPage() {
             <p className="text-slate-600 mb-6">Try adjusting your search or create a new course</p>
             <button
               onClick={openNewCourse}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow font-medium"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded shadow font-medium"
             >
               Create Your First Course
             </button>
@@ -1040,7 +1040,7 @@ export default function CoursesAdminPage() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeForm} />
           <form
             onSubmit={submitForm}
-            className="relative z-50 w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]"
+            className="relative z-50 w-full max-w-4xl bg-white rounded shadow-2xl overflow-hidden max-h-[90vh]"
           >
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
               <div className="flex items-center justify-between">
@@ -1068,7 +1068,7 @@ export default function CoursesAdminPage() {
                       type="text"
                       value={editing.title}
                       onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                       required
                     />
                   </div>
@@ -1079,7 +1079,7 @@ export default function CoursesAdminPage() {
                       type="text"
                       value={editing.durationToComplete || ""}
                       onChange={(e) => setEditing({ ...editing, durationToComplete: e.target.value })}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                       placeholder="e.g., 40 hours"
                     />
                   </div>
@@ -1091,7 +1091,7 @@ export default function CoursesAdminPage() {
                     value={editing.description || ""}
                     onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none text-slate-900"
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none text-slate-900"
                   />
                 </div>
 
@@ -1104,7 +1104,7 @@ export default function CoursesAdminPage() {
                       min="0"
                       value={editing.price}
                       onChange={(e) => setEditing({ ...editing, price: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                       required
                     />
                   </div>
@@ -1117,7 +1117,7 @@ export default function CoursesAdminPage() {
                       min="0"
                       value={editing.discountedPrice || ""}
                       onChange={(e) => setEditing({ ...editing, discountedPrice: e.target.value ? parseFloat(e.target.value) : undefined })}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                     />
                   </div>
 
@@ -1126,7 +1126,7 @@ export default function CoursesAdminPage() {
                     <select
                       value={editing.isPublic ? "true" : "false"}
                       onChange={(e) => setEditing({ ...editing, isPublic: e.target.value === "true", published: e.target.value === "true" })}
-                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-slate-900"
+                      className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-slate-900"
                     >
                       <option value="false">Private</option>
                       <option value="true">Public</option>
@@ -1136,13 +1136,13 @@ export default function CoursesAdminPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Course Thumbnail</label>
-                  <div className="border-2 border-dashed border-slate-300 rounded-xl p-6 text-center hover:border-indigo-400 transition cursor-pointer bg-slate-50">
+                  <div className="border-2 border-dashed border-slate-300 rounded p-6 text-center hover:border-indigo-400 transition cursor-pointer bg-slate-50">
                     {editing.courseThumbnail || editing.thumbnailFile ? (
                       <div className="relative">
                         <img
                           src={editing.thumbnailFile ? URL.createObjectURL(editing.thumbnailFile) : (editing.courseThumbnail || PLACEHOLDER)}
                           alt="Preview"
-                          className="w-full h-48 object-cover rounded-lg mx-auto"
+                          className="w-full h-48 object-cover rounded mx-auto"
                         />
                         <button
                           type="button"
@@ -1181,7 +1181,7 @@ export default function CoursesAdminPage() {
                     />
                     <label
                       htmlFor="courseThumbnail"
-                      className="inline-block mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium cursor-pointer transition"
+                      className="inline-block mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm font-medium cursor-pointer transition"
                     >
                       Choose Image
                     </label>
@@ -1200,14 +1200,14 @@ export default function CoursesAdminPage() {
                   <button
                     type="button"
                     onClick={closeForm}
-                    className="px-6 py-3 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition font-medium"
+                    className="px-6 py-3 border border-slate-300 text-slate-700 rounded hover:bg-slate-50 transition font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className={`px-6 py-3 rounded-xl font-medium transition ${
+                    className={`px-6 py-3 rounded font-medium transition ${
                       saving
                         ? "bg-slate-400 cursor-not-allowed text-white"
                         : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
@@ -1236,15 +1236,15 @@ export default function CoursesAdminPage() {
 
       {/* ---------- Module Form Modal ---------- */}
       {moduleFormOpen && editingModule && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50  flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModuleForm} />
           <form
             onSubmit={submitModuleForm}
-            className="relative z-50 w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+            className="relative z-50 w-full max-w-2xl bg-white rounded shadow-2xl overflow-hidden"
           >
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">
+                <h2 className="text-xl font-bold">
                   {editingModule._id ? "Edit Module" : "Add New Module"}
                 </h2>
                 <button
@@ -1274,7 +1274,7 @@ export default function CoursesAdminPage() {
                     type="text"
                     value={editingModule.title}
                     onChange={(e) => setEditingModule({ ...editingModule, title: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                     required
                     placeholder="e.g., Introduction to Course"
                   />
@@ -1286,7 +1286,7 @@ export default function CoursesAdminPage() {
                     value={editingModule.description || ""}
                     onChange={(e) => setEditingModule({ ...editingModule, description: e.target.value })}
                     rows={3}
-                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none text-slate-900"
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition resize-none text-slate-900"
                     placeholder="Brief description of the module..."
                   />
                 </div>
@@ -1296,7 +1296,7 @@ export default function CoursesAdminPage() {
                   <select
                     value={editingModule.type || ""}
                     onChange={(e) => setEditingModule({ ...editingModule, type: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-slate-900"
+                    className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-slate-900"
                   >
                     <option value="">Select type</option>
                     <option value="video">video</option>
@@ -1309,10 +1309,10 @@ export default function CoursesAdminPage() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm text-slate-600 mb-2">Upload File</label>
-                      <div className="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center hover:border-indigo-400 transition cursor-pointer bg-slate-50">
+                      <div className="border-2 border-dashed border-slate-300 rounded p-4 text-center hover:border-indigo-400 transition cursor-pointer bg-slate-50">
                         {editingModule.assetFile ? (
                           <div className="relative">
-                            <div className="flex items-center gap-3 p-3 bg-white rounded-lg">
+                            <div className="flex items-center gap-3 p-3 bg-white rounded">
                               <div className="text-2xl">
                                 {editingModule.type === 'video' ? '🎬' : 
                                  editingModule.type === 'pdf' ? '📄' : '📝'}
@@ -1358,7 +1358,7 @@ export default function CoursesAdminPage() {
                         />
                         <label
                           htmlFor="moduleFile"
-                          className="inline-block mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium cursor-pointer transition"
+                          className="inline-block mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm font-medium cursor-pointer transition"
                         >
                           Choose File
                         </label>
@@ -1376,7 +1376,7 @@ export default function CoursesAdminPage() {
                           setEditingModule({ ...editingModule, assetLink: e.target.value, assetFile: null });
                           setModuleError("");
                         }}
-                        className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
+                        className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                         placeholder="https://example.com/video"
                       />
                     </div>
@@ -1396,14 +1396,14 @@ export default function CoursesAdminPage() {
                   <button
                     type="button"
                     onClick={closeModuleForm}
-                    className="px-6 py-3 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition font-medium"
+                    className="px-6 py-3 border border-slate-300 text-slate-700 rounded hover:bg-slate-50 transition font-medium"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={saving}
-                    className={`px-6 py-3 rounded-xl font-medium transition ${
+                    className={`px-6 py-3 rounded font-medium transition ${
                       saving
                         ? "bg-slate-400 cursor-not-allowed text-white"
                         : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
@@ -1434,7 +1434,7 @@ export default function CoursesAdminPage() {
       {selectedCourse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedCourse(null)} />
-          <div className="relative z-50 max-w-6xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
+          <div className="relative z-50 max-w-6xl w-full bg-white rounded shadow-2xl overflow-hidden max-h-[90vh]">
             <div className="relative h-64 bg-gradient-to-r from-indigo-500 to-purple-600">
               <img
                 src={selectedCourse.courseThumbnail || PLACEHOLDER}
@@ -1473,7 +1473,7 @@ export default function CoursesAdminPage() {
                       <h3 className="text-lg font-semibold text-slate-900">Description</h3>
                       <button
                         onClick={() => openNewModule(selectedCourse._id)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-sm font-medium transition"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded text-sm font-medium transition"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1491,10 +1491,10 @@ export default function CoursesAdminPage() {
                         {selectedCourse.modules.map((module, index) => (
                           <div
                             key={module._id}
-                            className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition group"
+                            className="flex items-center justify-between p-4 bg-slate-50 rounded hover:bg-slate-100 transition group"
                           >
                             <div className="flex items-center gap-4 flex-1">
-                              <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center font-medium">
+                              <div className="flex-shrink-0 w-10 h-10 bg-indigo-100 text-indigo-600 rounded flex items-center justify-center font-medium">
                                 {index + 1}
                               </div>
                               <div className="flex-1">
@@ -1531,7 +1531,7 @@ export default function CoursesAdminPage() {
                               </button>
                               <button
                                 onClick={() => deleteModuleHandler(selectedCourse._id, module._id)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                className="p-2 text-red-600 hover:bg-red-50 rounded transition"
                                 title="Delete module"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1543,12 +1543,12 @@ export default function CoursesAdminPage() {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 bg-slate-50 rounded-xl">
+                      <div className="text-center py-8 bg-slate-50 rounded">
                         <div className="text-4xl mb-3">📚</div>
                         <p className="text-slate-600 mb-4">No modules added yet</p>
                         <button
                           onClick={() => openNewModule(selectedCourse._id)}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-sm font-medium transition"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded text-sm font-medium transition"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -1562,12 +1562,12 @@ export default function CoursesAdminPage() {
 
                 {/* Sidebar Stats */}
                 <div className="space-y-6">
-                  <div className="bg-slate-50 rounded-xl p-5">
+                  <div className="bg-slate-50 rounded p-5">
                     <h3 className="text-lg font-semibold text-slate-900 mb-4">Course Information</h3>
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <div>
                         <div className="text-sm text-slate-500">Price</div>
-                        <div className="text-2xl font-bold text-slate-900">${formatPrice(selectedCourse.price)}</div>
+                        <div className="text-xl font-bold text-slate-900">${formatPrice(selectedCourse.price)}</div>
                         {selectedCourse.discountedPrice && (
                           <div className="text-sm text-slate-400 line-through mt-1">
                             ${formatPrice(selectedCourse.discountedPrice)}
@@ -1616,7 +1616,7 @@ export default function CoursesAdminPage() {
                       <div className="pt-4 border-t border-slate-200">
                         <button
                           onClick={() => toggleVisibility(selectedCourse._id)}
-                          className={`w-full py-3 rounded-lg font-medium transition ${selectedCourse.isPublic ? 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200' : 'bg-green-50 hover:bg-green-100 text-green-700 border border-green-200'}`}
+                          className={`w-full py-3 rounded font-medium transition ${selectedCourse.isPublic ? 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700 border border-yellow-200' : 'bg-green-50 hover:bg-green-100 text-green-700 border border-green-200'}`}
                         >
                           {selectedCourse.isPublic ? 'Make Course Private' : 'Make Course Public'}
                         </button>
@@ -1627,7 +1627,7 @@ export default function CoursesAdminPage() {
                   <div className="flex gap-3">
                     <button
                       onClick={() => openNewModule(selectedCourse._id)}
-                      className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition"
+                      className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded font-medium transition"
                     >
                       Add Module
                     </button>
@@ -1636,7 +1636,7 @@ export default function CoursesAdminPage() {
                         setSelectedCourse(null);
                         openEditCourse(selectedCourse);
                       }}
-                      className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-medium transition"
+                      className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded font-medium transition"
                     >
                       Edit Course
                     </button>
@@ -1647,7 +1647,7 @@ export default function CoursesAdminPage() {
                           setSelectedCourse(null);
                         }
                       }}
-                      className="px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-medium transition"
+                      className="px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded font-medium transition"
                     >
                       Delete
                     </button>

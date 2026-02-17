@@ -235,7 +235,7 @@ export default function AdminSettings() {
       console.error("Save error:", err);
       setStatus({
         type: "error",
-        message: err.message || "Kuch gadbad ho gayi, thodi der baad try karo",
+        message: err.message || "error",
       });
     } finally {
       setSaving(false);
@@ -260,7 +260,7 @@ export default function AdminSettings() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-indigo-600 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Profile load ho raha hai...</p>
+          <p className="text-gray-600 font-medium">Update Profile...</p>
         </div>
       </div>
     );
@@ -271,13 +271,13 @@ export default function AdminSettings() {
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-slate-800">My Profile</h1>
+          <h1 className="text-2xl font-bold text-slate-800">My Profile</h1>
           <p className="text-slate-600 mt-2">Manage your details and password here</p>
         </div>
 
         {status && (
           <div
-            className={`rounded-2xl p-5 flex items-center gap-4 shadow-lg border-l-4 ${
+            className={`rounded p-5 flex items-center gap-4 shadow-lg border-l-4 ${
               status.type === "success"
                 ? "bg-green-50 border-green-500 text-green-800"
                 : "bg-red-50 border-red-500 text-red-800"
@@ -289,7 +289,7 @@ export default function AdminSettings() {
         )}
 
         {/* Profile Card */}
-        <div className="bg-white/90 backdrop-blur-lg rounded-3xl shadow-2xl border border-white/60 p-8">
+        <div className="bg-white/90 backdrop-blur-lg rounded  border border-white/60 p-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
             {/* Avatar */}
             <div className="flex flex-col items-center">
@@ -319,7 +319,7 @@ export default function AdminSettings() {
               <div className="flex gap-3">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl shadow-md hover:shadow-lg transition text-sm font-medium flex items-center gap-2"
+                  className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded shadow-md hover:shadow-lg transition text-sm font-medium flex items-center gap-2"
                 >
                   <Camera size={16} /> Update Image
                 </button>
@@ -354,7 +354,7 @@ export default function AdminSettings() {
                     type="text"
                     value={form.fullName}
                     onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-white/80 transition"
+                    className="w-full px-4 py-3 rounded border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-white/80 transition"
                     placeholder="Sanjay Kumar Chauhan"
                   />
                 </div>
@@ -377,11 +377,11 @@ export default function AdminSettings() {
         </div>
 
         {/* Password Section */}
-        <div className="bg-white/90 backdrop-blur-lg rounded-3xl text-black shadow-2xl border border-white/60 p-8">
+        <div className="bg-white/90 backdrop-blur-lg rounded text-black  border border-white/60 p-8">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center">
+            {/* <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded flex items-center justify-center">
               <Lock className="w-6 h-6 text-white" />
-            </div>
+            </div> */}
             <div>
               <h2 className="text-xl font-bold text-slate-800">Update Password</h2>
               <p className="text-sm text-slate-500">Leave it blank if you don't want to change the password.</p>
@@ -399,7 +399,7 @@ export default function AdminSettings() {
                   changePassword: { ...s.changePassword, current: e.target.value },
                 }))
               }
-              className="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 bg-white/80 transition"
+              className="px-4 py-3 rounded border-2 border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 bg-white/80 transition"
             />
             <input
               type="password"
@@ -411,7 +411,7 @@ export default function AdminSettings() {
                   changePassword: { ...s.changePassword, new: e.target.value },
                 }))
               }
-              className="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 bg-white/80 transition"
+              className="px-4 py-3 rounded border-2 border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 bg-white/80 transition"
             />
             <input
               type="password"
@@ -423,7 +423,7 @@ export default function AdminSettings() {
                   changePassword: { ...s.changePassword, confirm: e.target.value },
                 }))
               }
-              className="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 bg-white/80 transition"
+              className="px-4 py-3 rounded border-2 border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-100 bg-white/80 transition"
             />
           </div>
         </div>
@@ -433,7 +433,7 @@ export default function AdminSettings() {
           <button
             onClick={handleReset}
             disabled={saving}
-            className="px-8 py-4 rounded-xl border-2 border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition disabled:opacity-50 flex items-center justify-center gap-2"
+            className="px-8 py-4 rounded border-2 border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <RotateCcw size={18} /> Reset
           </button>
@@ -441,7 +441,7 @@ export default function AdminSettings() {
           <button
             onClick={handleSave}
             disabled={!isDirty || saving}
-            className={`px-10 py-4 rounded-xl font-bold text-white transition-all shadow-lg hover:shadow-2xl flex items-center justify-center gap-3 min-w-[180px] ${
+            className={`px-10 py-4 rounded font-bold text-white transition-all shadow-lg hover:shadow-2xl flex items-center justify-center gap-3 min-w-[180px] ${
               !isDirty || saving
                 ? "bg-gray-400 cursor-not-allowed"
                 : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:scale-105"

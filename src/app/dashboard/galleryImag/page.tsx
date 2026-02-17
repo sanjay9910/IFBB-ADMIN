@@ -363,7 +363,7 @@ export default function GalleryPage() {
             <button
               onClick={handleOpenUploadModal}
               disabled={!isAuthenticated || !token}
-              className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium ${
+              className={`inline-flex items-center gap-2 px-5 py-3 rounded shadow-lg hover:shadow-xl transition-all duration-200 font-medium ${
                 !isAuthenticated || !token
                   ? "bg-slate-400 cursor-not-allowed text-white"
                   : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
@@ -378,7 +378,7 @@ export default function GalleryPage() {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-xl p-4">
+            <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 font-medium">Total Images</p>
@@ -399,7 +399,7 @@ export default function GalleryPage() {
                 <div className="text-slate-700 text-xl">💾</div>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded-xl p-4">
+            <div className="bg-gradient-to-br from-white to-slate-50 border border-slate-200 rounded p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 font-medium">Last Updated</p>
@@ -415,7 +415,7 @@ export default function GalleryPage() {
 
         {/* Error/Success Messages */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-red-700">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -434,7 +434,7 @@ export default function GalleryPage() {
         )}
 
         {success && (
-          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-emerald-700">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -460,14 +460,14 @@ export default function GalleryPage() {
             <p className="text-sm text-slate-500 mt-2">Fetching image sizes, please wait</p>
           </div>
         ) : images.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+          <div className="text-center py-12 bg-white rounded border border-slate-200">
             <div className="text-6xl mb-4">📷</div>
             <h3 className="text-xl font-semibold text-slate-900 mb-2">No images yet</h3>
             <p className="text-slate-600 mb-6">Upload your first image to get started</p>
             <button
               onClick={handleOpenUploadModal}
               disabled={!isAuthenticated || !token}
-              className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl shadow font-medium ${
+              className={`inline-flex items-center gap-2 px-5 py-3 rounded shadow font-medium ${
                 !isAuthenticated || !token
                   ? "bg-slate-400 cursor-not-allowed text-white"
                   : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
@@ -485,7 +485,7 @@ export default function GalleryPage() {
             {images.map((image) => (
               <div
                 key={image._id}
-                className="group relative bg-white rounded-2xl border border-slate-200/50 overflow-hidden shadow-md hover:shadow-2xl transition-all duration-400 hover:-translate-y-2 cursor-pointer"
+                className="group relative bg-white rounded border border-slate-200/50 overflow-hidden shadow-md  transition-all duration-400  cursor-pointer"
               >
                 {/* Image Container */}
                 <div 
@@ -537,7 +537,7 @@ export default function GalleryPage() {
                         e.stopPropagation();
                         handleDeleteImage(image._id);
                       }}
-                      className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-110 active:scale-95"
+                      className="p-2 text-red-500 hover:bg-red-50 rounded transition-all duration-200 hover:scale-110 active:scale-95"
                       title="Delete image"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -549,7 +549,7 @@ export default function GalleryPage() {
                   {/* View Details Button */}
                   <button
                     onClick={() => handleImageClick(image)}
-                    className="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95"
+                    className="w-full py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded font-semibold transition-all duration-300 shadow-md hover:shadow-lg  active:scale-95"
                   >
                     View Details
                   </button>
@@ -566,7 +566,7 @@ export default function GalleryPage() {
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseUploadModal} />
           <form
             onSubmit={handleFileUpload}
-            className="relative z-50 w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden"
+            className="relative z-50 w-full max-w-md bg-white rounded shadow-2xl overflow-hidden"
           >
             <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6 text-white">
               <div className="flex items-center justify-between">
@@ -590,7 +590,7 @@ export default function GalleryPage() {
                     Select Image *
                   </label>
                   <div 
-                    className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center hover:border-emerald-400 transition cursor-pointer bg-slate-50"
+                    className="border-2 border-dashed border-slate-300 rounded p-8 text-center hover:border-emerald-400 transition cursor-pointer bg-slate-50"
                     onClick={() => fileInputRef.current?.click()}
                   >
                     {selectedFile ? (
@@ -616,7 +616,7 @@ export default function GalleryPage() {
                     />
                     <label
                       htmlFor="galleryImage"
-                      className="inline-block mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium cursor-pointer transition"
+                      className="inline-block mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-sm font-medium cursor-pointer transition"
                     >
                       {selectedFile ? 'Change File' : 'Choose File'}
                     </label>
@@ -635,7 +635,7 @@ export default function GalleryPage() {
                   <button
                     type="button"
                     onClick={handleCloseUploadModal}
-                    className="px-6 py-3 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition font-medium"
+                    className="px-6 py-3 border border-slate-300 text-slate-700 rounded hover:bg-slate-50 transition font-medium"
                   >
                     Cancel
                   </button>
@@ -670,8 +670,8 @@ export default function GalleryPage() {
       {/* ---------- Image View Modal ---------- */}
       {showImageModal && selectedImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={handleCloseImageModal} />
-          <div className="relative z-50 max-w-4xl w-full bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh]">
+          <div className="fixed inset-0 bg-black/80" onClick={handleCloseImageModal} />
+          <div className="relative z-50 max-w-4xl w-full bg-white rounded shadow-2xl overflow-hidden max-h-[90vh]">
             <div className="relative">
               <img
                 src={selectedImage.imageUrl}
@@ -721,20 +721,20 @@ export default function GalleryPage() {
                       href={selectedImage.imageUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block w-full py-3 px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl font-medium text-center transition-colors duration-200"
+                      className="block w-full py-3 px-4 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded font-medium text-center transition-colors duration-200"
                     >
                       Open in New Tab
                     </a>
                     <button
                       onClick={() => copyToClipboard(selectedImage.imageUrl)}
-                      className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl font-medium transition-colors duration-200"
+                      className="w-full py-3 px-4 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded font-medium transition-colors duration-200"
                     >
                       Copy Image URL
                     </button>
                     <button
                       onClick={() => handleDeleteImage(selectedImage._id)}
                       disabled={!token}
-                      className={`w-full py-3 px-4 rounded-xl font-medium transition-colors duration-200 ${
+                      className={`w-full py-3 px-4 rounded font-medium transition-colors duration-200 ${
                         !token
                           ? "bg-red-100 text-red-400 cursor-not-allowed"
                           : "bg-red-50 hover:bg-red-100 text-red-600"

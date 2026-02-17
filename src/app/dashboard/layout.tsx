@@ -26,7 +26,6 @@ export default function DashboardLayout({
           className="
             flex-1
             mt-14 md:mt-0
-            px-4 sm:px-6 lg:px-8
             bg-gray-50
           "
         >
@@ -36,10 +35,8 @@ export default function DashboardLayout({
               max-w-full
               mx-auto
               bg-white
-              rounded-2xl
+              rounded-xl
               shadow-sm
-              border border-gray-200
-              p-4 sm:p-6
              mt-[90px]
              mb-[20px]
             "

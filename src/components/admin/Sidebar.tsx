@@ -228,7 +228,7 @@ export default function Sidebar() {
           
           <div className="relative">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center mb-4 shadow-lg shadow-red-500/30">
-              <LogOut className="w-6 h-6 text-white" />
+              <LogOut className="w-6 h-6 text-white"  />
             </div>
             
             <h2 className="text-xl font-bold text-slate-900 mb-2">Confirm Logout</h2>

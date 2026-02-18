@@ -189,9 +189,7 @@ export default function Sidebar() {
         >
           <button
             onClick={() => setOpen(false)}
-            className="absolute right-4 top-4 z-20 p-2 rounded-lg bg-slate-800/50 backdrop-blur-sm
-                       hover:bg-slate-700/50 transition-all duration-300 hover:rotate-90 active:scale-90
-                       border border-slate-700/50 hover:border-slate-600"
+            className="absolute right-4 top-4 z-20 p-2 rounded-lg bg-slate-800/50 backdrop-blur-sm hover:bg-slate-700/50 transition-all duration-300 hover:rotate-90 active:scale-90 border border-slate-700/50 hover:border-slate-600"
           >
             <X className="w-5 h-5" />
           </button>
@@ -200,10 +198,7 @@ export default function Sidebar() {
       </div>
 
       {/* ===== DESKTOP SIDEBAR with enhanced gradient ===== */}
-      <aside className="hidden md:flex fixed top-0 left-0 bottom-0 w-70
-                        bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900
-                        border-r border-slate-700/50 z-[999] flex-col
-                        shadow-2xl shadow-black/50 backdrop-blur-xl">
+      <aside className="hidden md:flex fixed top-0 left-0 bottom-0 w-70 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 border-r border-slate-700/50 z-[999] flex-col shadow-2xl shadow-black/50 backdrop-blur-xl">
         {SidebarContent}
       </aside>
 
@@ -244,18 +239,13 @@ export default function Sidebar() {
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="px-5 py-2.5 border-2 border-slate-300 rounded-xl text-slate-700 font-semibold
-                         hover:bg-slate-100 hover:border-slate-400 transition-all duration-300 
-                         hover:scale-105 active:scale-95 hover:shadow-lg"
+                className="px-5 py-2.5 border-2 border-slate-300 rounded-xl text-slate-700 font-semibold hover:bg-slate-100 hover:border-slate-400 transition-all duration-300 hover:scale-105 active:scale-95 hover:shadow-lg"
               >
                 Cancel
               </button>
               <button
                 onClick={handleLogout}
-                className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl font-semibold
-                         hover:from-red-700 hover:to-red-800 transition-all duration-300 
-                         hover:scale-105 active:scale-95 shadow-lg shadow-red-500/40
-                         hover:shadow-xl hover:shadow-red-500/50"
+                className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl font-semibold hover:from-red-700 hover:to-red-800 transition-all duration-300 hover:scale-105 active:scale-95 shadow-lg shadow-red-500/40 hover:shadow-xl hover:shadow-red-500/50"
               >
                 Logout
               </button>

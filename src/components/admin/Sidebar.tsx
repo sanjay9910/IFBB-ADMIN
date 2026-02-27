@@ -43,8 +43,6 @@ export default function Sidebar() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Prevent body scroll when mobile sidebar is open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = "hidden";
@@ -156,7 +154,7 @@ export default function Sidebar() {
   return (
     <>
       {/* ===== MOBILE TOP BAR with backdrop blur ===== */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-slate-900/80 backdrop-blur-xl z-[1000] flex items-center px-4 border-b border-slate-700/50 shadow-xl">
+      <div className="md:hidden fixed top-0 left-0 right-0 h-20 bg-slate-900/80 backdrop-blur-xl z-[1000] flex items-center px-4 border-b border-slate-700/50 shadow-xl">
         <button 
           onClick={() => setOpen(true)}
           className="p-2 rounded-lg hover:bg-white/10 transition-all duration-300 active:scale-90 group"

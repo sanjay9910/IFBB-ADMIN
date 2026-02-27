@@ -636,14 +636,14 @@ export default function Header() {
             <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="px-5 py-2.5 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
+                className="px-5 py-2.5 rounded border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors font-medium"
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleLogoutConfirm}
-                className="px-5 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white transition-colors font-medium"
+                className="px-5 py-2.5 rounded bg-red-600 hover:bg-red-700 text-white transition-colors font-medium"
               >
                 Yes, Logout
               </button>

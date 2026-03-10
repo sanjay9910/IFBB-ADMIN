@@ -740,14 +740,14 @@ export default function CoursesAdminPage() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Course Management</h1>
+              <h1 className="text-xl font-bold text-slate-900">Course Management</h1>
               <p className="mt-2 text-slate-600">Manage your course catalog, analytics, and student engagement</p>
             </div>
             <button
               onClick={openNewCourse}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded   transition-all duration-200 font-medium"
+              className="inline-flex items-center gap-2 py-2 px-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded   transition-all duration-200 font-medium"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 20 20">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               Create Course
@@ -790,7 +790,7 @@ export default function CoursesAdminPage() {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search courses, tags, or descriptions..."
+                  placeholder="Search courses,  descriptions..."
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
                 />
                 {query && (
@@ -853,11 +853,11 @@ export default function CoursesAdminPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                     
                     {/* Status Badges */}
-                    <div className="absolute top-2   left-2 flex gap-2">
+                    <div className="absolute top-2 rounded   left-2 flex gap-2">
                       {/* <Pill className={`${c.published ? "bg-emerald-500 text-white" : "bg-slate-600 text-white"}`}>
                         {c.published ? "Published" : "Draft"}
                       </Pill> */}
-                      <Pill className={`${c.isPublic ? "bg-blue-500 text-white" : "bg-slate-500 text-white"}`}>
+                      <Pill className={`${c.isPublic ? "bg-blue-500 rounded text-white" : "bg-slate-500 rounded text-white"}`}>
                         {c.isPublic ? "Public" : "Private"}
                       </Pill>
                     </div>
@@ -1327,7 +1327,7 @@ export default function CoursesAdminPage() {
                                   setEditingModule({ ...editingModule, assetFile: null });
                                   setModuleError("");
                                 }}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                className="p-2 text-red-600 hover:bg-red-50 rounded"
                               >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1455,7 +1455,7 @@ export default function CoursesAdminPage() {
                 </div>
                 <button
                   onClick={() => setSelectedCourse(null)}
-                  className="p-2 hover:bg-white/20 rounded-full transition"
+                  className="p-2 hover:bg-white/20 rounded transition"
                 >
                   <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

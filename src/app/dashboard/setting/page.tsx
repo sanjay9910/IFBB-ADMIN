@@ -367,7 +367,7 @@ export default function AdminSettings() {
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm((s) => ({ ...s, email: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-white/80 transition"
+                    className="w-full px-4 py-3 rounded border-2 border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100 bg-white/80 transition"
                     placeholder="admin@gmail.com"
                   />
                 </div>

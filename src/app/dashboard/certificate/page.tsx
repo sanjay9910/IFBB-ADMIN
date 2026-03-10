@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 // API configuration
 const API_CONFIG = {
-  baseUrl: "https://ifbb-master.onrender.com/api",
+  baseUrl: "http://88.222.245.178:5003/api",
   uploadEndpoint: "/admin/certificates",
   fetchEndpoint: "/certificates",
   deleteEndpoint: "/admin/certificates",

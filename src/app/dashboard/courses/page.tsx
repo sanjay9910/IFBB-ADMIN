@@ -38,7 +38,7 @@ type Course = {
 };
 
 /* ------------- Constants ------------- */
-const API_BASE_URL = "https://ifbb-master.onrender.com/api/admin";
+const API_BASE_URL = "http://88.222.245.178:5003/api/admin";
 const PLACEHOLDER = "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?q=80&w=1200&auto=format&fit=crop";
 
 /* ------------- API Functions ------------- */

@@ -3,7 +3,7 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
-const API_BASE_URL = "https://ifbb-master.onrender.com/api/admin";
+const API_BASE_URL = "http://88.222.245.178:5003/api/admin";
 
 type UploadedFile = {
   id: string;

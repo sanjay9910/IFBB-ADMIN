@@ -43,7 +43,7 @@ type FilterType = "all" | "active" | "inactive";
 
 /* ================= CONFIG ================= */
 
-const API_URL = "https://ifbb-master.onrender.com/api/admin/get-all-users";
+const API_URL = "http://88.222.245.178:5003/api/admin/get-all-users";
 
 /* ================= HELPERS ================= */
 

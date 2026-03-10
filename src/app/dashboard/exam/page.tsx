@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { AlertCircle, CheckCircle, Loader2, Plus, Trash2, ChevronDown } from 'lucide-react';
 
 // ← Yeh base URL change kar diya hai (jo pehle kaam kar raha tha)
-const BASE_URL = 'https://ifbb-master.onrender.com';
+const BASE_URL = 'http://88.222.245.178:5003';
 
 interface Question {
   question: string;

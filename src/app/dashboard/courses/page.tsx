@@ -16,6 +16,9 @@ type ModuleItem = {
     fileName?: string;
     fileType?: string;
   };
+  // Multiple files support
+  assetFiles?: File[];
+  assetLinks?: string[];
 };
 
 type Course = {
@@ -295,6 +298,11 @@ export default function CoursesAdminPage() {
   const [selectedCourseForModule, setSelectedCourseForModule] = useState<string>("");
   const [moduleError, setModuleError] = useState<string>("");
   
+  // New state for multiple files
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedLinks, setSelectedLinks] = useState<string[]>([]);
+  const [currentLink, setCurrentLink] = useState<string>("");
+  
   // Pagination state
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -310,24 +318,90 @@ export default function CoursesAdminPage() {
     }
   }, [token]);
 
-  async function loadCourses(page = 1) {
-    if (!token) return;
-    
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/get-stats?page=${page}&limit=${pagination.itemsPerPage}`, {
+async function loadCourses(page = 1) {
+  if (!token) return;
+  
+  setLoading(true);
+  try {
+    // Call 1: Stats ke liye (stat cards update hone ke liye)
+    const statsResponse = await fetch(`${API_BASE_URL}/get-stats`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (statsResponse.ok) {
+      const statsData = await statsResponse.json();
+      setStats({
+        totalCourses: statsData.stats?.totalCourses || 0,
+        totalUsers: statsData.stats?.totalUsers || 0,
+        totalRevenue: statsData.stats?.totalRevenue || 0,
+        averageRating: statsData.stats?.averageRating || 0,
+        totalPurchasesCount: statsData.stats?.totalPurchasesCount || 0
+      });
+
+      setPagination(prev => ({
+        ...prev,
+        currentPage: page,
+        totalPages: Math.ceil((statsData.stats?.totalCourses || 0) / prev.itemsPerPage),
+        totalItems: statsData.stats?.totalCourses || 0
+      }));
+    }
+
+    // Call 2: ✅ Saare courses fetch karne ke liye alag endpoint
+    const coursesResponse = await fetch(
+      `${API_BASE_URL}/get-all-courses?page=${page}&limit=${pagination.itemsPerPage}`,
+      {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Extract all courses from stats
-        const allCourses = data.stats?.recentCourses || [];
-        const courseData = allCourses.map((course: any) => ({
+      }
+    );
+
+    if (coursesResponse.ok) {
+      const coursesData = await coursesResponse.json();
+
+      // ✅ Backend ke response shape ke hisaab se adjust karo
+      const rawCourses =
+        coursesData.courses ||
+        coursesData.data ||
+        coursesData.allCourses ||
+        [];
+
+      const courseData = rawCourses.map((course: any) => ({
+        _id: course._id,
+        title: course.title,
+        price: course.price || 0,
+        discountedPrice: course.discountedPrice,
+        rating: course.averageRating || course.rating || 0,
+        durationToComplete: course.durationToComplete,
+        modules: course.modules?.map((module: any) => ({
+          _id: module._id,
+          title: module.title,
+          description: module.description,
+          type: module.type,
+          assetLink: module.assetLink,
+          asset: module.asset || {}
+        })) || [],
+        courseThumbnail: course.courseThumbnail,
+        description: course.description,
+        isPublic: course.isPublic,
+        published: course.isPublic,
+        tags: course.tags || [],
+        createdAt: course.createdAt,
+        updatedAt: course.updatedAt,
+        purchasedByHowMuch: course.purchasedByHowMuch || 0
+      }));
+
+      setCourses(courseData);
+    } else {
+      // ✅ Fallback: agar get-all-courses endpoint nahi hai toh get-stats wala use karo
+      console.warn(`get-all-courses failed (${coursesResponse.status}), falling back to recentCourses`);
+      const fallbackData = await statsResponse.json().catch(() => null);
+      if (fallbackData?.stats?.recentCourses) {
+        setCourses(fallbackData.stats.recentCourses.map((course: any) => ({
           _id: course._id,
           title: course.title,
           price: course.price || 0,
@@ -350,31 +424,16 @@ export default function CoursesAdminPage() {
           createdAt: course.createdAt,
           updatedAt: course.updatedAt,
           purchasedByHowMuch: course.purchasedByHowMuch || 0
-        }));
-        
-        setCourses(courseData);
-        setStats({
-          totalCourses: data.stats?.totalCourses || 0,
-          totalUsers: data.stats?.totalUsers || 0,
-          totalRevenue: data.stats?.totalRevenue || 0,
-          averageRating: data.stats?.averageRating || 0,
-          totalPurchasesCount: data.stats?.totalPurchasesCount || 0
-        });
-        
-        // Update pagination
-        setPagination(prev => ({
-          ...prev,
-          currentPage: page,
-          totalPages: Math.ceil((data.stats?.totalCourses || 0) / prev.itemsPerPage),
-          totalItems: data.stats?.totalCourses || 0
-        }));
+        })));
       }
-    } catch (error) {
-      console.error("Error loading courses:", error);
-    } finally {
-      setLoading(false);
     }
+
+  } catch (error) {
+    console.error("Error loading courses:", error);
+  } finally {
+    setLoading(false);
   }
+}
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -427,6 +486,9 @@ export default function CoursesAdminPage() {
     setModuleFormOpen(false);
     setSelectedCourseForModule("");
     setModuleError("");
+    setSelectedFiles([]);
+    setSelectedLinks([]);
+    setCurrentLink("");
   }
 
   function openNewModule(courseId: string) {
@@ -439,10 +501,15 @@ export default function CoursesAdminPage() {
       description: "",
       type: "pdf",
       assetLink: "",
-      assetFile: null
+      assetFile: null,
+      assetFiles: [],
+      assetLinks: []
     });
     setSelectedCourseForModule(courseId);
     setModuleError("");
+    setSelectedFiles([]);
+    setSelectedLinks([]);
+    setCurrentLink("");
     setModuleFormOpen(true);
   }
 
@@ -450,11 +517,50 @@ export default function CoursesAdminPage() {
     // Close the view course modal first
     setSelectedCourse(null);
     
-    setEditingModule({ ...module, assetFile: null });
+    setEditingModule({ 
+      ...module, 
+      assetFile: null,
+      assetFiles: [],
+      assetLinks: module.assetLink ? [module.assetLink] : []
+    });
     setSelectedCourseForModule(courseId);
     setModuleError("");
+    setSelectedFiles([]);
+    setSelectedLinks(module.assetLink ? [module.assetLink] : []);
+    setCurrentLink("");
     setModuleFormOpen(true);
   }
+
+  // Handle file selection
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const newFiles = Array.from(files);
+      setSelectedFiles(prev => [...prev, ...newFiles]);
+      setModuleError("");
+    }
+    // Clear input value so same file can be selected again
+    e.target.value = '';
+  };
+
+  // Remove file from list
+  const removeFile = (indexToRemove: number) => {
+    setSelectedFiles(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  // Add link to list
+  const addLink = () => {
+    if (currentLink.trim()) {
+      setSelectedLinks(prev => [...prev, currentLink.trim()]);
+      setCurrentLink("");
+      setModuleError("");
+    }
+  };
+
+  // Remove link from list
+  const removeLink = (indexToRemove: number) => {
+    setSelectedLinks(prev => prev.filter((_, index) => index !== indexToRemove));
+  };
 
   async function submitModuleForm(e?: React.FormEvent) {
     e?.preventDefault();
@@ -470,8 +576,8 @@ export default function CoursesAdminPage() {
       return;
     }
     
-    if (!editingModule.assetFile && !editingModule.assetLink) {
-      setModuleError("Please upload a file or provide a link");
+    if (selectedFiles.length === 0 && selectedLinks.length === 0) {
+      setModuleError("Please upload at least one file or add a link");
       return;
     }
 
@@ -484,12 +590,14 @@ export default function CoursesAdminPage() {
       formData.append('description', editingModule.description || '');
       formData.append('type', editingModule.type || '');
       
-      if (editingModule.assetFile) {
-        formData.append('asset', editingModule.assetFile);
-      } 
+      // Append multiple files
+      selectedFiles.forEach((file, index) => {
+        formData.append(`assets`, file);
+      });
       
-      if (editingModule.assetLink) {
-        formData.append('assetLink', editingModule.assetLink);
+      // Append multiple links as JSON string
+      if (selectedLinks.length > 0) {
+        formData.append('assetLinks', JSON.stringify(selectedLinks));
       }
 
       let response;
@@ -1164,7 +1272,7 @@ export default function CoursesAdminPage() {
                       <div className="py-8">
                         <div className="text-4xl mb-3">📸</div>
                         <p className="text-slate-600 mb-2">Upload a course thumbnail</p>
-                        <p className="text-sm text-slate-500">Recommended: 1200×720 px</p>
+                        {/* <p className="text-sm text-slate-500">Recommended: 1200×720 px</p> */}
                       </div>
                     )}
                     <input
@@ -1234,15 +1342,15 @@ export default function CoursesAdminPage() {
         </div>
       )}
 
-      {/* ---------- Module Form Modal ---------- */}
+      {/* ---------- Module Form Modal (Updated with multiple files support) ---------- */}
       {moduleFormOpen && editingModule && (
-        <div className="fixed inset-0 z-50  flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModuleForm} />
           <form
             onSubmit={submitModuleForm}
-            className="relative z-50 w-full max-w-2xl bg-white rounded shadow-2xl overflow-hidden"
+            className="relative z-50 w-full max-w-2xl bg-white rounded shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
           >
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white sticky top-0">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold">
                   {editingModule._id ? "Edit Module" : "Add New Module"}
@@ -1299,98 +1407,140 @@ export default function CoursesAdminPage() {
                     className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-slate-900"
                   >
                     <option value="">Select type</option>
-                    <option value="video">video</option>
-                    <option value="pdf">pdf</option>
+                    <option value="video">Video</option>
+                    <option value="pdf">PDF</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Content *</label>
-                  <div className="space-y-4">
+                  
+                  {/* Multiple Files Upload Section */}
+                  <div className="space-y-4 mb-6">
                     <div>
-                      <label className="block text-sm text-slate-600 mb-2">Upload File</label>
+                      <label className="block text-sm text-slate-600 mb-2">Upload Multiple Files</label>
                       <div className="border-2 border-dashed border-slate-300 rounded p-4 text-center hover:border-indigo-400 transition cursor-pointer bg-slate-50">
-                        {editingModule.assetFile ? (
-                          <div className="relative">
-                            <div className="flex items-center gap-3 p-3 bg-white rounded">
-                              <div className="text-2xl">
-                                {editingModule.type === 'video' ? '🎬' : 
-                                 editingModule.type === 'pdf' ? '📄' : '📝'}
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-medium text-slate-900">{editingModule.assetFile.name}</div>
-                                <div className="text-sm text-slate-600">{(editingModule.assetFile.size / 1024 / 1024).toFixed(2)} MB</div>
+                        <input
+                          type="file"
+                          id="moduleFiles"
+                          className="hidden"
+                          multiple
+                          accept={editingModule.type === 'video' ? 'video/*' : 
+                                  editingModule.type === 'pdf' ? '.pdf' : '*'}
+                          onChange={handleFileSelect}
+                        />
+                        <label
+                          htmlFor="moduleFiles"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm font-medium cursor-pointer transition"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Choose Files
+                        </label>
+                        <p className="mt-2 text-sm text-slate-500">You can select multiple files at once</p>
+                      </div>
+                    </div>
+
+                    {/* Selected Files List */}
+                    {selectedFiles.length > 0 && (
+                      <div className="bg-slate-50 rounded p-3">
+                        <h4 className="text-sm font-medium text-slate-700 mb-2">Selected Files ({selectedFiles.length})</h4>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {selectedFiles.map((file, index) => (
+                            <div key={index} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg">
+                                  {editingModule.type === 'video' ? '🎬' : '📄'}
+                                </span>
+                                <div>
+                                  <div className="text-sm font-medium text-slate-900">{file.name}</div>
+                                  <div className="text-xs text-slate-500">{(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                                </div>
                               </div>
                               <button
                                 type="button"
-                                onClick={() => {
-                                  setEditingModule({ ...editingModule, assetFile: null });
-                                  setModuleError("");
-                                }}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded"
+                                onClick={() => removeFile(index)}
+                                className="p-1 text-red-600 hover:bg-red-50 rounded"
                               >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                               </button>
                             </div>
-                          </div>
-                        ) : (
-                          <div className="py-6">
-                            <div className="text-4xl mb-3">📎</div>
-                            <p className="text-slate-600 mb-2">Upload video, PDF or other file</p>
-                            <p className="text-sm text-slate-500">Max file size: 10MB</p>
-                          </div>
-                        )}
-                        <input
-                          type="file"
-                          id="moduleFile"
-                          className="hidden"
-                          accept={editingModule.type === 'video' ? 'video/*' : 
-                                  editingModule.type === 'pdf' ? '.pdf' : '*'}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setEditingModule({ ...editingModule, assetFile: file, assetLink: "" });
-                              setModuleError("");
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor="moduleFile"
-                          className="inline-block mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm font-medium cursor-pointer transition"
-                        >
-                          Choose File
-                        </label>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
                     <div className="text-center text-slate-500">OR</div>
 
+                    {/* Multiple Links Section */}
                     <div>
-                      <label className="block text-sm text-slate-600 mb-2">External Link</label>
-                      <input
-                        type="text"
-                        value={editingModule.assetLink || ""}
-                        onChange={(e) => {
-                          setEditingModule({ ...editingModule, assetLink: e.target.value, assetFile: null });
-                          setModuleError("");
-                        }}
-                        className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
-                        placeholder="https://example.com/video"
-                      />
+                      <label className="block text-sm text-slate-600 mb-2">Add External Links</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={currentLink}
+                          onChange={(e) => setCurrentLink(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addLink())}
+                          className="flex-1 px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
+                          placeholder="https://example.com/video"
+                        />
+                        <button
+                          type="button"
+                          onClick={addLink}
+                          disabled={!currentLink.trim()}
+                          className={`px-4 py-2 rounded text-sm font-medium transition ${
+                            currentLink.trim() 
+                              ? 'bg-indigo-600 hover:bg-indigo-700 text-white' 
+                              : 'bg-slate-300 cursor-not-allowed text-slate-500'
+                          }`}
+                        >
+                          Add
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Selected Links List */}
+                    {selectedLinks.length > 0 && (
+                      <div className="bg-slate-50 rounded p-3">
+                        <h4 className="text-sm font-medium text-slate-700 mb-2">Added Links ({selectedLinks.length})</h4>
+                        <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {selectedLinks.map((link, index) => (
+                            <div key={index} className="flex items-center justify-between bg-white p-2 rounded border border-slate-200">
+                              <div className="flex items-center gap-2 flex-1">
+                                <span className="text-lg">🔗</span>
+                                <span className="text-sm text-slate-600 truncate">{link}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeLink(index)}
+                                className="p-1 text-red-600 hover:bg-red-50 rounded ml-2"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="mt-2 text-xs text-slate-500">
+                      * You can add multiple files and multiple links. All will be saved with this module.
+                    </p>
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">* Please provide either a file upload OR an external link</p>
                 </div>
               </div>
             </div>
 
             {/* Footer */}
-            <div className="border-t border-slate-200 p-6 bg-slate-50">
+            <div className="border-t border-slate-200 p-6 bg-slate-50 sticky bottom-0">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-slate-600">
-                  {editingModule._id ? "Update module details" : "Add new module"}
+                  {editingModule._id ? "Update module details" : "Add new module with multiple files"}
                 </div>
                 <div className="flex items-center gap-3">
                   <button
@@ -1430,7 +1580,7 @@ export default function CoursesAdminPage() {
         </div>
       )}
 
-      {/* ---------- View Modal ---------- */}
+      {/* ---------- View Modal (Updated to show multiple files) ---------- */}
       {selectedCourse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedCourse(null)} />

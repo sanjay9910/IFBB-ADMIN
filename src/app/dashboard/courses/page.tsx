@@ -333,6 +333,7 @@ async function loadCourses(page = 1) {
 
     if (statsResponse.ok) {
       const statsData = await statsResponse.json();
+      console.log("Revenue",statsData)
       setStats({
         totalCourses: statsData.stats?.totalCourses || 0,
         totalUsers: statsData.stats?.totalUsers || 0,
@@ -392,7 +393,7 @@ async function loadCourses(page = 1) {
         tags: course.tags || [],
         createdAt: course.createdAt,
         updatedAt: course.updatedAt,
-        purchasedByHowMuch: course.purchasedByHowMuch || 0
+        purchasedByHowMuch: course.total_enrolled_user || 0
       }));
 
       setCourses(courseData);

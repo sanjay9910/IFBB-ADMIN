@@ -14,7 +14,6 @@ import {
   Filter,
   Search,
   Calendar,
-  ChevronDown,
   TrendingUp,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -328,7 +327,10 @@ export default function UsersList() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const mapped: Student[] = res.data.map((u: any, idx: number) => ({
+        // Check if response has users array
+        const usersData = res.data.users || [];
+
+        const mapped: Student[] = usersData.map((u: any, idx: number) => ({
           id: u._id,
           name: u.name || "Unknown",
           email: u.email || "N/A",
@@ -411,7 +413,7 @@ export default function UsersList() {
             <div className="p-2.5 bg-indigo-600 rounded">
               <Users className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-xl sm:text-xl lg:text-4xl font-extrabold text-gray-900 tracking-tight">
+            <h1 className="text-xl sm:text-xl lg:text-xl font-extrabold text-gray-900 tracking-tight">
               Users Management
             </h1>
           </div>

@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
-import Img from '../../../../public/images/TrainerImg2.jpg';
+import Img from '../../../../public/images/image-02.jpg';
 import ImgLogo from '../../../../public/images/Logo.png';
 
 export default function LoginPage() {

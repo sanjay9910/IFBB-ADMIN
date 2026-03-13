@@ -157,6 +157,8 @@ export default function ExamManagerPage() {
     const endpoint = `/api/admin/course/${selectedCourseId}/module/${selectedModuleId}/test`;
     const fullUrl = `${BASE_URL}${endpoint}`;
 
+    console.log("sanjay",endpoint)
+
     console.log('[API → POST]', {
       url: fullUrl,
       tokenStart: token?.substring(0, 10) + '...',
@@ -203,7 +205,7 @@ export default function ExamManagerPage() {
       }
 
       const data = await response.json();
-      setSubmitStatus({ type: 'success', message: data.message || 'Test successfully save ho gaya!' });
+      setSubmitStatus({ type: 'success', message: data.message || 'Test successfully save!' });
 
       // Refresh course list
       const refresh = await fetch(`${BASE_URL}/api/admin/get-all-courses`, {

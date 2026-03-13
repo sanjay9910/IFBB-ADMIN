@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 // API configuration
 const API_CONFIG = {
-  baseUrl: "http://88.222.245.178:5003/api",
+  baseUrl: "https://api.ifbb.qurilo.com/api",
   uploadEndpoint: "/admin/certificates",
   fetchEndpoint: "/certificates",
   deleteEndpoint: "/admin/certificates",

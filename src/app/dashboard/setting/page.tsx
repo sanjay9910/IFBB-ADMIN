@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
-const API_BASE = "http://88.222.245.178:5003";
+const API_BASE = "https://api.ifbb.qurilo.com";
 
 interface AdminProfile {
   _id: string;

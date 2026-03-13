@@ -44,7 +44,7 @@ const NotificationPage = () => {
       // const token = "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiI2OTJlYzU5NDliZjAyYWIwODJiOGIyODYiLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc2NjczNzE2NSwiaXNzIjoiaWlmYiIsImF1ZCI6ImlpZmItYXVkaWVuY2UiLCJleHAiOjE3NjY5OTYzNjV9.tS421n-I4X912B42Jj7zQaLM_UjRU99CVGphy_Arvqc";
 
       const response = await fetch(
-        'http://88.222.245.178:5003/api/admin/course-inquiries',
+        'https://api.ifbb.qurilo.com/api/admin/course-inquiries',
         {
           method: 'GET',
           headers: {

@@ -1583,7 +1583,7 @@ async function loadCourses(page = 1) {
 
       {/* ---------- View Modal (Updated to show multiple files) ---------- */}
       {selectedCourse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 ml-[400px] z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedCourse(null)} />
           <div className="relative z-50 max-w-6xl w-full bg-white rounded shadow-2xl overflow-hidden max-h-[90vh]">
             <div className="relative h-64 bg-gradient-to-r from-indigo-500 to-purple-600">

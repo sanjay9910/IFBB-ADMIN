@@ -21,6 +21,16 @@ interface Inquiry {
   updatedAt: string;
 }
 
+interface AdminProfile {
+  _id: string;
+  email: string;
+  fullname?: string;
+  fullName?: string;
+  image?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 const navItems = [
   { key: "users", label: "Users", href: "/dashboard/users" },
   { key: "brands", label: "Brand Logo", href: "/dashboard/brands" },
@@ -35,7 +45,6 @@ const API_BASE_URL = "https://api.ifbb.qurilo.com/api";
 export default function Header() {
  const { token, logout } = useAuth();
 
-
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
@@ -46,10 +55,52 @@ export default function Header() {
   const [newInquiriesCount, setNewInquiriesCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [profile, setProfile] = useState<AdminProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   const profileRef = useRef<HTMLDivElement | null>(null);
   const notificationRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+
+  // Fetch admin profile
+  const fetchAdminProfile = async () => {
+    if (!token) {
+      setProfileLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/admin/profile`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        mode: "cors",
+        credentials: "include",
+      });
+
+      if (response.status === 401) {
+        logout();
+        router.push("/auth/login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch profile: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.admin) {
+        setProfile(data.admin);
+      }
+    } catch (err) {
+      console.error("Profile Fetch Error:", err);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   // Fetch inquiries
   const fetchInquiries = async () => {
@@ -101,9 +152,10 @@ export default function Header() {
     }
   };
 
-  // Fetch inquiries on mount and set up polling
+  // Fetch profile and inquiries on mount and set up polling
   useEffect(() => {
     if (token) {
+      fetchAdminProfile();
       fetchInquiries();
       const interval = setInterval(fetchInquiries, 30000);
       return () => clearInterval(interval);
@@ -221,6 +273,23 @@ export default function Header() {
     inq.status === "new" && !viewedInquiries.has(inq._id)
   ).length;
 
+  // Get display name from profile
+  const getDisplayName = () => {
+    if (profile?.fullName) return profile.fullName;
+    if (profile?.fullname) return profile.fullname;
+    return "Admin User";
+  };
+
+  // Get email from profile
+  const getEmail = () => {
+    return profile?.email || "admin@gmail.com";
+  };
+
+  // Get profile image
+  const getProfileImage = () => {
+    return profile?.image || "/images/sanjay.jpeg";
+  };
+
   // Show loading while checking authentication
   if (!token) {
     return (
@@ -291,13 +360,24 @@ export default function Header() {
                 className="mt-2"
               >
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-slate-200 relative flex-shrink-0 border-2 border-white shadow-sm">
-                  <Image 
-                    src="/images/sanjay.jpeg" 
-                    alt="Admin avatar" 
-                    fill 
-                    style={{ objectFit: "cover" }}
-                    sizes="(max-width: 768px) 32px, 36px"
-                  />
+                  {profileLoading ? (
+                    <div className="w-full h-full flex items-center justify-center bg-slate-200">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : (
+                    < img
+                      src={getProfileImage()}
+                      alt="Admin avatar" 
+                      fill 
+                      style={{ objectFit: "cover" }}
+                      sizes="(max-width: 768px) 32px, 36px"
+                      onError={(e) => {
+                        // Fallback to default image if the profile image fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/images/sanjay.jpeg";
+                      }}
+                    />
+                  )}
                 </div>
               </button>
 
@@ -306,10 +386,10 @@ export default function Header() {
                 <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg py-2 z-[100]">
                   <div className="px-4 py-2 border-b">
                     <div className="text-sm font-medium text-slate-900 truncate">
-                      admin@gmail.com
+                      {getEmail()}
                     </div>
                     <div className="text-xs text-slate-500 truncate">
-                      Admin User
+                      {getDisplayName()}
                     </div>
                   </div>
                   <a
@@ -563,7 +643,7 @@ export default function Header() {
                 <div>
                   <div className="font-medium text-slate-800">IFBB Admin</div>
                   <div className="text-sm text-slate-500">
-                    admin@gmail.com
+                    {getEmail()}
                   </div>
                 </div>
               </div>

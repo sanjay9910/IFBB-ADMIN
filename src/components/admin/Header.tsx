@@ -368,7 +368,7 @@ export default function Header() {
                     < img
                       src={getProfileImage()}
                       alt="Admin avatar" 
-                      fill 
+                     
                       style={{ objectFit: "cover" }}
                       sizes="(max-width: 768px) 32px, 36px"
                       onError={(e) => {

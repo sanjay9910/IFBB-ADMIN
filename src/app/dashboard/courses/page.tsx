@@ -880,11 +880,11 @@ async function loadCourses(page = 1) {
               value={`$${stats.totalRevenue.toFixed(2)}`}
               icon={<span className="text-2xl">💰</span>}
             />
-            <StatCard
+            {/* <StatCard
               label="Avg Rating"
               value={stats.averageRating.toFixed(1)}
               icon={<span className="text-2xl">⭐</span>}
-            />
+            /> */}
           </div>
 
           {/* Search and Filters */}

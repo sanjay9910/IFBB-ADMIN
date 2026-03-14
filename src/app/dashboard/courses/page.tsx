@@ -4,7 +4,7 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useAuth } from '@/hooks/useAuth';
 
 /* ---------------- Types ---------------- */
-type ModuleItem = { 
+type ModuleItem = {
   _id: string;
   title: string;
   description?: string;
@@ -36,6 +36,7 @@ type Course = {
   published: boolean;
   tags: string[];
   createdAt: string;
+  actual_price: number;
   updatedAt: string;
   purchasedByHowMuch?: number;
 };
@@ -53,11 +54,11 @@ async function fetchCourses(page = 1, limit = 10, token: string) {
         'Content-Type': 'application/json'
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch courses: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return {
       courses: (data.stats?.recentCourses || []).map((course: any) => ({
@@ -65,6 +66,7 @@ async function fetchCourses(page = 1, limit = 10, token: string) {
         title: course.title,
         price: course.price || 0,
         discountedPrice: course.discountedPrice,
+        actual_price: course?.actual_price?.$numberDecimal,
         rating: course.averageRating || 0,
         durationToComplete: course.durationToComplete,
         modules: course.modules?.map((module: any) => ({
@@ -105,12 +107,12 @@ async function toggleCourseVisibility(courseId: string, isPublic: boolean, token
       },
       body: JSON.stringify({ isPublic })
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to update visibility: ${response.status} - ${errorText}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error toggling course visibility:", error);
@@ -127,13 +129,13 @@ async function createCourse(courseData: FormData, token: string) {
       },
       body: courseData
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Create course error response:", errorText);
       throw new Error(`Failed to create course: ${response.status} - ${errorText}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error creating course:", error);
@@ -150,13 +152,13 @@ async function updateCourse(courseId: string, courseData: FormData, token: strin
       },
       body: courseData
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Update course error response:", errorText);
       throw new Error(`Failed to update course: ${response.status} - ${errorText}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error updating course:", error);
@@ -173,12 +175,12 @@ async function updateModule(courseId: string, moduleId: string, moduleData: Form
       },
       body: moduleData
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to update module: ${response.status} - ${errorText}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error updating module:", error);
@@ -195,12 +197,12 @@ async function addModule(courseId: string, moduleData: FormData, token: string) 
       },
       body: moduleData
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Failed to add module: ${response.status} - ${errorText}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error adding module:", error);
@@ -217,13 +219,13 @@ async function deleteModule(courseId: string, moduleId: string, token: string) {
         'Content-Type': 'application/json'
       }
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`Delete module failed. Course ID: ${courseId}, Module ID: ${moduleId}, Status: ${response.status}`);
       throw new Error(`Failed to delete module: ${response.status} - ${errorText}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error deleting module:", error);
@@ -240,11 +242,11 @@ async function deleteCourse(courseId: string, token: string) {
         'Content-Type': 'application/json'
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to delete course: ${response.status}`);
     }
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error deleting course:", error);
@@ -297,12 +299,12 @@ export default function CoursesAdminPage() {
   const [moduleFormOpen, setModuleFormOpen] = useState(false);
   const [selectedCourseForModule, setSelectedCourseForModule] = useState<string>("");
   const [moduleError, setModuleError] = useState<string>("");
-  
+
   // New state for multiple files
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedLinks, setSelectedLinks] = useState<string[]>([]);
   const [currentLink, setCurrentLink] = useState<string>("");
-  
+
   // Pagination state
   const [pagination, setPagination] = useState({
     currentPage: 1,
@@ -318,96 +320,66 @@ export default function CoursesAdminPage() {
     }
   }, [token]);
 
-async function loadCourses(page = 1) {
-  if (!token) return;
-  
-  setLoading(true);
-  try {
-    // Call 1: Stats ke liye (stat cards update hone ke liye)
-    const statsResponse = await fetch(`${API_BASE_URL}/get-stats`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
+  async function loadCourses(page = 1) {
+    if (!token) return;
 
-    if (statsResponse.ok) {
-      const statsData = await statsResponse.json();
-      console.log("Revenue",statsData)
-      setStats({
-        totalCourses: statsData.stats?.totalCourses || 0,
-        totalUsers: statsData.stats?.totalUsers || 0,
-        totalRevenue: statsData.stats?.totalRevenue || 0,
-        averageRating: statsData.stats?.averageRating || 0,
-        totalPurchasesCount: statsData.stats?.totalPurchasesCount || 0
-      });
-
-      setPagination(prev => ({
-        ...prev,
-        currentPage: page,
-        totalPages: Math.ceil((statsData.stats?.totalCourses || 0) / prev.itemsPerPage),
-        totalItems: statsData.stats?.totalCourses || 0
-      }));
-    }
-
-    // Call 2: ✅ Saare courses fetch karne ke liye alag endpoint
-    const coursesResponse = await fetch(
-      `${API_BASE_URL}/get-all-courses?page=${page}&limit=${pagination.itemsPerPage}`,
-      {
+    setLoading(true);
+    try {
+      // Call 1: Stats ke liye (stat cards update hone ke liye)
+      const statsResponse = await fetch(`${API_BASE_URL}/get-stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
+      });
+
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        console.log("Revenue", statsData)
+        setStats({
+          totalCourses: statsData.stats?.totalCourses || 0,
+          totalUsers: statsData.stats?.totalUsers || 0,
+          totalRevenue: statsData.stats?.totalRevenue || 0,
+          averageRating: statsData.stats?.averageRating || 0,
+          totalPurchasesCount: statsData.stats?.totalPurchasesCount || 0
+        });
+
+        setPagination(prev => ({
+          ...prev,
+          currentPage: page,
+          totalPages: Math.ceil((statsData.stats?.totalCourses || 0) / prev.itemsPerPage),
+          totalItems: statsData.stats?.totalCourses || 0
+        }));
       }
-    );
 
-    if (coursesResponse.ok) {
-      const coursesData = await coursesResponse.json();
+      // Call 2: ✅ Saare courses fetch karne ke liye alag endpoint
+      const coursesResponse = await fetch(
+        `${API_BASE_URL}/get-all-courses?page=${page}&limit=${pagination.itemsPerPage}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
 
-      // ✅ Backend ke response shape ke hisaab se adjust karo
-      const rawCourses =
-        coursesData.courses ||
-        coursesData.data ||
-        coursesData.allCourses ||
-        [];
+      if (coursesResponse.ok) {
+        const coursesData = await coursesResponse.json();
 
-      const courseData = rawCourses.map((course: any) => ({
-        _id: course._id,
-        title: course.title,
-        price: course.price || 0,
-        discountedPrice: course.discountedPrice,
-        rating: course.averageRating || course.rating || 0,
-        durationToComplete: course.durationToComplete,
-        modules: course.modules?.map((module: any) => ({
-          _id: module._id,
-          title: module.title,
-          description: module.description,
-          type: module.type,
-          assetLink: module.assetLink,
-          asset: module.asset || {}
-        })) || [],
-        courseThumbnail: course.courseThumbnail,
-        description: course.description,
-        isPublic: course.isPublic,
-        published: course.isPublic,
-        tags: course.tags || [],
-        createdAt: course.createdAt,
-        updatedAt: course.updatedAt,
-        purchasedByHowMuch: course.total_enrolled_user || 0
-      }));
+        // ✅ Backend ke response shape ke hisaab se adjust karo
+        const rawCourses =
+          coursesData.courses ||
+          coursesData.data ||
+          coursesData.allCourses ||
+          [];
 
-      setCourses(courseData);
-    } else {
-      // ✅ Fallback: agar get-all-courses endpoint nahi hai toh get-stats wala use karo
-      console.warn(`get-all-courses failed (${coursesResponse.status}), falling back to recentCourses`);
-      const fallbackData = await statsResponse.json().catch(() => null);
-      if (fallbackData?.stats?.recentCourses) {
-        setCourses(fallbackData.stats.recentCourses.map((course: any) => ({
+        const courseData = rawCourses.map((course: any) => ({
           _id: course._id,
           title: course.title,
           price: course.price || 0,
           discountedPrice: course.discountedPrice,
-          rating: course.averageRating || 0,
+          actual_price: course?.actual_price?.$numberDecimal,
+          rating: course.averageRating || course.rating || 0,
           durationToComplete: course.durationToComplete,
           modules: course.modules?.map((module: any) => ({
             _id: module._id,
@@ -424,17 +396,49 @@ async function loadCourses(page = 1) {
           tags: course.tags || [],
           createdAt: course.createdAt,
           updatedAt: course.updatedAt,
-          purchasedByHowMuch: course.purchasedByHowMuch || 0
-        })));
-      }
-    }
+          purchasedByHowMuch: course.total_enrolled_user || 0
+        }));
 
-  } catch (error) {
-    console.error("Error loading courses:", error);
-  } finally {
-    setLoading(false);
+        setCourses(courseData);
+      } else {
+        // ✅ Fallback: agar get-all-courses endpoint nahi hai toh get-stats wala use karo
+        console.warn(`get-all-courses failed (${coursesResponse.status}), falling back to recentCourses`);
+        const fallbackData = await statsResponse.json().catch(() => null);
+        if (fallbackData?.stats?.recentCourses) {
+          setCourses(fallbackData.stats.recentCourses.map((course: any) => ({
+            _id: course._id,
+            title: course.title,
+            price: course.price || 0,
+            discountedPrice: course.discountedPrice,
+            actual_price: course?.actual_price?.$numberDecimal,
+            rating: course.averageRating || 0,
+            durationToComplete: course.durationToComplete,
+            modules: course.modules?.map((module: any) => ({
+              _id: module._id,
+              title: module.title,
+              description: module.description,
+              type: module.type,
+              assetLink: module.assetLink,
+              asset: module.asset || {}
+            })) || [],
+            courseThumbnail: course.courseThumbnail,
+            description: course.description,
+            isPublic: course.isPublic,
+            published: course.isPublic,
+            tags: course.tags || [],
+            createdAt: course.createdAt,
+            updatedAt: course.updatedAt,
+            purchasedByHowMuch: course.purchasedByHowMuch || 0
+          })));
+        }
+      }
+
+    } catch (error) {
+      console.error("Error loading courses:", error);
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -470,7 +474,7 @@ async function loadCourses(page = 1) {
   }
 
   function openEditCourse(c: Course) {
-    setEditing({ 
+    setEditing({
       ...c,
       thumbnailFile: null
     });
@@ -495,7 +499,7 @@ async function loadCourses(page = 1) {
   function openNewModule(courseId: string) {
     // Close the view course modal first
     setSelectedCourse(null);
-    
+
     setEditingModule({
       _id: "",
       title: "",
@@ -517,9 +521,9 @@ async function loadCourses(page = 1) {
   function openEditModule(module: ModuleItem, courseId: string) {
     // Close the view course modal first
     setSelectedCourse(null);
-    
-    setEditingModule({ 
-      ...module, 
+
+    setEditingModule({
+      ...module,
       assetFile: null,
       assetFiles: [],
       assetLinks: module.assetLink ? [module.assetLink] : []
@@ -566,17 +570,17 @@ async function loadCourses(page = 1) {
   async function submitModuleForm(e?: React.FormEvent) {
     e?.preventDefault();
     if (!editingModule || !selectedCourseForModule || !token) return;
-    
+
     if (!editingModule.title.trim()) {
       setModuleError("Please enter module title");
       return;
     }
-    
+
     if (!editingModule.type) {
       setModuleError("Please select module type");
       return;
     }
-    
+
     if (selectedFiles.length === 0 && selectedLinks.length === 0) {
       setModuleError("Please upload at least one file or add a link");
       return;
@@ -584,18 +588,18 @@ async function loadCourses(page = 1) {
 
     setSaving(true);
     setModuleError("");
-    
+
     try {
       const formData = new FormData();
       formData.append('title', editingModule.title);
       formData.append('description', editingModule.description || '');
       formData.append('type', editingModule.type || '');
-      
+
       // Append multiple files
       selectedFiles.forEach((file, index) => {
         formData.append(`assets`, file);
       });
-      
+
       // Append multiple links as JSON string
       if (selectedLinks.length > 0) {
         formData.append('assetLinks', JSON.stringify(selectedLinks));
@@ -626,13 +630,13 @@ async function loadCourses(page = 1) {
   async function deleteModuleHandler(courseId: string, moduleId: string) {
     if (!token) return;
     if (!confirm("Delete this module? This cannot be undone.")) return;
-    
+
     try {
       console.log(`Deleting module: Course ID - ${courseId}, Module ID - ${moduleId}`);
-      
+
       await deleteModule(courseId, moduleId, token);
       await loadCourses(pagination.currentPage);
-      
+
       // Refresh selected course if it's open
       if (selectedCourse && selectedCourse._id === courseId) {
         const updatedCourse = courses.find(c => c._id === courseId);
@@ -640,7 +644,7 @@ async function loadCourses(page = 1) {
           setSelectedCourse(updatedCourse);
         }
       }
-      
+
       alert("Module deleted successfully!");
     } catch (error: any) {
       console.error("Error deleting module:", error);
@@ -651,29 +655,29 @@ async function loadCourses(page = 1) {
   async function submitForm(e?: React.FormEvent) {
     e?.preventDefault();
     if (!editing || !token) return;
-    
+
     if (!editing.title.trim()) {
       alert("Please enter course title");
       return;
     }
 
     setSaving(true);
-    
+
     try {
       const formData = new FormData();
       formData.append('title', editing.title);
       formData.append('description', editing.description || '');
       formData.append('price', editing.price.toString());
       formData.append('isPublic', editing.isPublic.toString());
-      
+
       if (editing.discountedPrice) {
         formData.append('discountedPrice', editing.discountedPrice.toString());
       }
-      
+
       if (editing.durationToComplete) {
         formData.append('durationToComplete', editing.durationToComplete);
       }
-      
+
       if (editing.thumbnailFile) {
         formData.append('thumbnail', editing.thumbnailFile);
       }
@@ -702,7 +706,7 @@ async function loadCourses(page = 1) {
   async function onDelete(courseId: string) {
     if (!token) return;
     if (!confirm("Delete this course? This cannot be undone.")) return;
-    
+
     try {
       await deleteCourse(courseId, token);
       await loadCourses(pagination.currentPage);
@@ -719,25 +723,25 @@ async function loadCourses(page = 1) {
   // Fixed: Proper visibility toggle with API call
   async function toggleVisibility(courseId: string) {
     if (!token) return;
-    
+
     const course = courses.find(c => c._id === courseId);
     if (!course) return;
-    
+
     const newVisibility = !course.isPublic;
-    
+
     try {
       await toggleCourseVisibility(courseId, newVisibility, token);
-      
+
       // Update local state
-      setCourses(prev => prev.map(p => 
+      setCourses(prev => prev.map(p =>
         p._id === courseId ? { ...p, isPublic: newVisibility, published: newVisibility } : p
       ));
-      
+
       // Update selected course if it's the same
       if (selectedCourse?._id === courseId) {
         setSelectedCourse(prev => prev ? { ...prev, isPublic: newVisibility, published: newVisibility } : null);
       }
-      
+
     } catch (error) {
       console.error("Failed to update visibility:", error);
       alert("Failed to update course visibility. Please try again.");
@@ -763,18 +767,18 @@ async function loadCourses(page = 1) {
   function PaginationControls() {
     const pages = [];
     const maxVisiblePages = 5;
-    
+
     let startPage = Math.max(1, pagination.currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(pagination.totalPages, startPage + maxVisiblePages - 1);
-    
+
     if (endPage - startPage + 1 < maxVisiblePages) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
       pages.push(i);
     }
-    
+
     return (
       <div className="flex items-center justify-center mt-8">
         <nav className="flex items-center gap-2">
@@ -785,7 +789,7 @@ async function loadCourses(page = 1) {
           >
             Previous
           </button>
-          
+
           {startPage > 1 && (
             <>
               <button
@@ -797,7 +801,7 @@ async function loadCourses(page = 1) {
               {startPage > 2 && <span className="px-2">...</span>}
             </>
           )}
-          
+
           {pages.map(page => (
             <button
               key={page}
@@ -807,7 +811,7 @@ async function loadCourses(page = 1) {
               {page}
             </button>
           ))}
-          
+
           {endPage < pagination.totalPages && (
             <>
               {endPage < pagination.totalPages - 1 && <span className="px-2">...</span>}
@@ -819,7 +823,7 @@ async function loadCourses(page = 1) {
               </button>
             </>
           )}
-          
+
           <button
             onClick={() => goToPage(pagination.currentPage + 1)}
             disabled={pagination.currentPage === pagination.totalPages}
@@ -836,7 +840,7 @@ async function loadCourses(page = 1) {
   function formatPrice(price: number | string): string {
     if (typeof price === 'string') {
       const numPrice = parseFloat(price);
-      return isNaN(numPrice) ? "0.00" : numPrice.toFixed(2);
+      return isNaN(numPrice) ? "0.00" : numPrice.toFixed(1);
     }
     return price.toFixed(2);
   }
@@ -952,6 +956,11 @@ async function loadCourses(page = 1) {
                   key={c._id}
                   className="group bg-white rounded border border-slate-200 overflow-hidden shadow-sm  transition-all duration-300"
                 >
+                  <div className="relative">
+                    <span className="text-sm bg-red-600 text-white p-1 m-1 absolute right-0 z-50 rounded">
+                      {parseInt(c.discountedPrice)}%
+                    </span>
+                  </div>
                   {/* Course Image */}
                   <div className="relative h-48 overflow-hidden">
                     <img
@@ -960,7 +969,7 @@ async function loadCourses(page = 1) {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                    
+
                     {/* Status Badges */}
                     <div className="absolute top-2 rounded   left-2 flex gap-2">
                       {/* <Pill className={`${c.published ? "bg-emerald-500 text-white" : "bg-slate-600 text-white"}`}>
@@ -975,9 +984,11 @@ async function loadCourses(page = 1) {
                     <div className="absolute bottom-3 right-3 bg-white/90 backdrop-blur-sm rounded px-2 py-1 shadow-lg">
                       {/* <div className="text-sm text-slate-500">Price</div> */}
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-slate-900">${formatPrice(c.price)}</span>
+                        <span className="text-sm font-bold text-slate-900">${formatPrice(c.actual_price)}</span>
+                        {/* <span className="text-sm font-bold text-slate-900">${formatPrice(c.actual_price?.$numberDecimal)}</span> */}
                         {c.discountedPrice && (
-                          <span className="text-sm text-slate-400 line-through">${formatPrice(c.discountedPrice)}</span>
+                          // <span className="text-sm text-slate-400 line-through">${formatPrice(c.discountedPrice)}</span>
+                          <span className="text-sm text-slate-400 line-through">${formatPrice(c.price)}</span>
                         )}
                       </div>
                     </div>
@@ -1052,7 +1063,7 @@ async function loadCourses(page = 1) {
                 </div>
               ))}
             </div>
-            
+
             {/* Pagination Controls */}
             {pagination.totalPages > 1 && <PaginationControls />}
           </>
@@ -1070,7 +1081,7 @@ async function loadCourses(page = 1) {
                     <div className="w-24 h-16 rounded overflow-hidden flex-shrink-0">
                       <img src={c.courseThumbnail || PLACEHOLDER} alt={c.title} className="w-full h-full object-cover" />
                     </div>
-                    
+
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-bold text-slate-900">{c.title}</h3>
@@ -1086,9 +1097,9 @@ async function loadCourses(page = 1) {
                           </div>
                         </div>
                       </div>
-                      
+
                       <p className="text-slate-600 text-sm mb-2 line-clamp-1">{c.description}</p>
-                      
+
                       <div className="flex items-center gap-4 text-sm text-slate-500">
                         <span>⭐ {c.rating?.toFixed(1) || "0.0"}</span>
                         <span>⏱️ {c.durationToComplete || "—"}</span>
@@ -1097,7 +1108,7 @@ async function loadCourses(page = 1) {
                         <span>📅 {new Date(c.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-2">
                       <button
                         onClick={() => toggleVisibility(c._id)}
@@ -1122,7 +1133,7 @@ async function loadCourses(page = 1) {
                 </div>
               ))}
             </div>
-            
+
             {/* Pagination Controls */}
             {pagination.totalPages > 1 && <PaginationControls />}
           </>
@@ -1219,7 +1230,7 @@ async function loadCourses(page = 1) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Discounted Price ($)</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Discounted Price (%)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -1256,10 +1267,10 @@ async function loadCourses(page = 1) {
                         <button
                           type="button"
                           onClick={() => {
-                            setEditing({ 
-                              ...editing, 
+                            setEditing({
+                              ...editing,
                               courseThumbnail: null,
-                              thumbnailFile: null 
+                              thumbnailFile: null
                             });
                           }}
                           className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition"
@@ -1316,11 +1327,10 @@ async function loadCourses(page = 1) {
                   <button
                     type="submit"
                     disabled={saving}
-                    className={`px-6 py-3 rounded font-medium transition ${
-                      saving
-                        ? "bg-slate-400 cursor-not-allowed text-white"
-                        : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
-                    }`}
+                    className={`px-6 py-3 rounded font-medium transition ${saving
+                      ? "bg-slate-400 cursor-not-allowed text-white"
+                      : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
+                      }`}
                   >
                     {saving ? (
                       <span className="flex items-center gap-2">
@@ -1415,7 +1425,7 @@ async function loadCourses(page = 1) {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Content *</label>
-                  
+
                   {/* Multiple Files Upload Section */}
                   <div className="space-y-4 mb-6">
                     <div>
@@ -1426,8 +1436,8 @@ async function loadCourses(page = 1) {
                           id="moduleFiles"
                           className="hidden"
                           multiple
-                          accept={editingModule.type === 'video' ? 'video/*' : 
-                                  editingModule.type === 'pdf' ? '.pdf' : '*'}
+                          accept={editingModule.type === 'video' ? 'video/*' :
+                            editingModule.type === 'pdf' ? '.pdf' : '*'}
                           onChange={handleFileSelect}
                         />
                         <label
@@ -1492,11 +1502,10 @@ async function loadCourses(page = 1) {
                           type="button"
                           onClick={addLink}
                           disabled={!currentLink.trim()}
-                          className={`px-4 py-2 rounded text-sm font-medium transition ${
-                            currentLink.trim() 
-                              ? 'bg-indigo-600 hover:bg-indigo-700 text-white' 
-                              : 'bg-slate-300 cursor-not-allowed text-slate-500'
-                          }`}
+                          className={`px-4 py-2 rounded text-sm font-medium transition ${currentLink.trim()
+                            ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                            : 'bg-slate-300 cursor-not-allowed text-slate-500'
+                            }`}
                         >
                           Add
                         </button>
@@ -1554,11 +1563,10 @@ async function loadCourses(page = 1) {
                   <button
                     type="submit"
                     disabled={saving}
-                    className={`px-6 py-3 rounded font-medium transition ${
-                      saving
-                        ? "bg-slate-400 cursor-not-allowed text-white"
-                        : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
-                    }`}
+                    className={`px-6 py-3 rounded font-medium transition ${saving
+                      ? "bg-slate-400 cursor-not-allowed text-white"
+                      : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg"
+                      }`}
                   >
                     {saving ? (
                       <span className="flex items-center gap-2">

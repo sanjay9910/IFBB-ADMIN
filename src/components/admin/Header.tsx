@@ -316,7 +316,7 @@ export default function Header() {
     <>
       {/* HEADER */}
       <header
-        className="fixed top-0 left-0 right-0 bg-white border-b z-50 h-20 shadow-sm"
+        className="fixed top-0 left-0 right-0 bg-white border-b z-100 h-20 shadow-sm"
         role="banner"
       >
         <div className="h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between">

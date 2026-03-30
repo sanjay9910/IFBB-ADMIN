@@ -603,7 +603,7 @@ export default function GalleryPage() {
                       <>
                         <div className="text-4xl mb-3">📁</div>
                         <p className="text-slate-600 mb-2">Click to browse or drag & drop</p>
-                        <p className="text-sm text-slate-500 mb-4">Supports: JPG, PNG, WebP (Max 5MB)</p>
+                        {/* <p className="text-sm text-slate-500 mb-4">Supports: JPG, PNG, WebP (Max 5MB)</p> */}
                       </>
                     )}
                     <input

@@ -42,6 +42,7 @@ type Course = {
 };
 
 /* ------------- Constants ------------- */
+// const API_BASE_URL = "https://api.ifbb.qurilo.com/api/admin";
 const API_BASE_URL = "https://api.ifbb.qurilo.com/api/admin";
 const PLACEHOLDER = "https://images.unsplash.com/photo-1605296867304-46d5465a13f1?q=80&w=1200&auto=format&fit=crop";
 
@@ -1186,6 +1187,7 @@ export default function CoursesAdminPage() {
                     <label className="block text-sm font-medium text-slate-700 mb-2">Course Title *</label>
                     <input
                       type="text"
+                      placeholder="Course title"
                       value={editing.title}
                       onChange={(e) => setEditing({ ...editing, title: e.target.value })}
                       className="w-full px-4 py-3 bg-white border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-slate-900"
@@ -1208,6 +1210,7 @@ export default function CoursesAdminPage() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
                   <textarea
+                  placeholder="Minimum length 10 words..."
                     value={editing.description || ""}
                     onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                     rows={3}
@@ -1232,6 +1235,7 @@ export default function CoursesAdminPage() {
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Discounted Price (%)</label>
                     <input
+                    placeholder="%"
                       type="number"
                       step="0.01"
                       min="0"
@@ -1355,11 +1359,11 @@ export default function CoursesAdminPage() {
 
       {/* ---------- Module Form Modal (Updated with multiple files support) ---------- */}
       {moduleFormOpen && editingModule && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0  z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModuleForm} />
           <form
             onSubmit={submitModuleForm}
-            className="relative z-50 w-full max-w-2xl bg-white rounded shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
+            className="relative z-50 w-full max-w-2xl bg-white rounded shadow-2xl overflow-hidden max-h-[80vh]"
           >
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white sticky top-0">
               <div className="flex items-center justify-between">
@@ -1378,7 +1382,7 @@ export default function CoursesAdminPage() {
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="p-6 overflow-y-auto max-h-[65vh]">
               <div className="space-y-6">
                 {/* Error Message */}
                 {moduleError && (
@@ -1591,8 +1595,8 @@ export default function CoursesAdminPage() {
 
       {/* ---------- View Modal (Updated to show multiple files) ---------- */}
       {selectedCourse && (
-        <div className="fixed inset-0 ml-[400px] z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedCourse(null)} />
+        <div className="fixed inset-0 mt-4 ml-[280px] z-50 flex items-center justify-center p-4">
+          <div className="fixed  inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedCourse(null)} />
           <div className="relative z-50 max-w-6xl w-full bg-white rounded shadow-2xl overflow-hidden max-h-[90vh]">
             <div className="relative h-64 bg-gradient-to-r from-indigo-500 to-purple-600">
               <img

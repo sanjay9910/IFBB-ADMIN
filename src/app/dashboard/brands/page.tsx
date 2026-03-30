@@ -392,7 +392,7 @@ export default function BrandImagesPage() {
             <div className="p-6 border-b border-slate-200">
               <h2 className="text-xl font-semibold text-slate-900">Upload New Images</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Upload brand logos and affiliation images. Supported formats: PNG, JPG, GIF.
+                Upload brand logos and affiliation images.
               </p>
             </div>
 
@@ -755,7 +755,7 @@ export default function BrandImagesPage() {
             </div>
 
             {/* Footer notes */}
-            <div className="border-t border-slate-200 p-6 bg-gradient-to-r from-slate-50 to-white">
+            {/* <div className="border-t border-slate-200 p-6 bg-gradient-to-r from-slate-50 to-white">
               <div className="text-sm">
                 <h4 className="font-semibold text-slate-900 mb-2">Information</h4>
                 <ul className="text-slate-600 space-y-1">
@@ -777,7 +777,7 @@ export default function BrandImagesPage() {
                   </li>
                 </ul>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

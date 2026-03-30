@@ -157,7 +157,7 @@ const NotificationPage = () => {
 
         {/* Filter Tabs */}
         <div className="mb-6 flex flex-wrap gap-2">
-          {(['all', 'new', 'contacted', 'rejected'] as const).map((status) => (
+          {(['all'] as const).map((status) => (
             <button
               key={status}
               onClick={() => setFilterStatus(status)}

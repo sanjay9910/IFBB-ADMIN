@@ -26,7 +26,7 @@ interface ApiResponse {
 }
 
 const NotificationPage = () => {
-   const { token } = useAuth();
+  const { token } = useAuth();
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -161,11 +161,10 @@ const NotificationPage = () => {
             <button
               key={status}
               onClick={() => setFilterStatus(status)}
-              className={`px-4 py-2 rounded font-medium transition-all ${
-                filterStatus === status
+              className={`px-4 py-2 rounded font-medium transition-all ${filterStatus === status
                   ? 'bg-[#2424B9] text-white shadow-lg'
                   : 'bg-white text-slate-700 border border-slate-300 hover:border-[#2424B9] hover:text-[#2424B9]'
-              }`}
+                }`}
             >
               {status.charAt(0).toUpperCase() + status.slice(1)}
               <span className="ml-2 font-bold">({statusCounts[status]})</span>

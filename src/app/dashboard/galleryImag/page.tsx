@@ -29,25 +29,21 @@ async function getImageSize(url: string): Promise<number> {
       return parseInt(contentLength, 10);
     }
     
-    // If content-length header is not available, fetch the whole image
     const imgResponse = await fetch(url);
     const blob = await imgResponse.blob();
     return blob.size;
   } catch (error) {
     console.error("Error fetching image size:", error);
-    return 0; // Return 0 if cannot fetch size
+    return 0; 
   }
 }
 
 function formatBytes(bytes: number, decimals: number = 2): string {
   if (bytes === 0) return '0 Bytes';
-
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
@@ -66,8 +62,6 @@ async function fetchGalleryImagesWithSizes(): Promise<ImageWithSize[]> {
     
     const data = await response.json();
     const images: GalleryImage[] = data.images || [];
-    
-    // Fetch sizes for all images in parallel
     const imagesWithSizes = await Promise.all(
       images.map(async (image) => {
         try {
@@ -158,14 +152,12 @@ export default function GalleryPage() {
     setMounted(true);
   }, []);
 
-  // Fetch images on component mount
   useEffect(() => {
     if (mounted) {
       loadImages();
     }
   }, [mounted]);
 
-  // Update total storage when images change
   useEffect(() => {
     const totalBytes = images.reduce((sum, image) => sum + (image.sizeInBytes || 0), 0);
     setTotalStorage(totalBytes);
@@ -219,14 +211,11 @@ export default function GalleryPage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         setError("Please select a valid image file (JPEG, PNG, etc.)");
         return;
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError("Image size should be less than 5MB");
         return;
@@ -262,7 +251,7 @@ export default function GalleryPage() {
       
       if (result.success) {
         setSuccess("Image uploaded successfully!");
-        await loadImages(); // Refresh the image list with sizes
+        await loadImages(); 
         handleCloseUploadModal();
       } else {
         throw new Error(result.message || "Upload failed");
@@ -294,10 +283,7 @@ export default function GalleryPage() {
       
       if (result.success) {
         setSuccess("Image deleted successfully!");
-        // Remove the deleted image from state
         setImages(prev => prev.filter(img => img._id !== imageId));
-        
-        // Close modal if the deleted image was selected
         if (selectedImage?._id === imageId) {
           handleCloseImageModal();
         }
@@ -508,15 +494,6 @@ export default function GalleryPage() {
                     </div>
                   </div>
 
-                  {/* View Icon - Appears on Hover */}
-                  {/* <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-400">
-                    <div className="bg-white/20 backdrop-blur-md p-4 rounded border border-white/30">
-                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    </div>
-                  </div> */}
                 </div>
 
                 {/* Info Section */}

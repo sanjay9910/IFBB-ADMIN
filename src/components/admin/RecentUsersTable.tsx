@@ -268,8 +268,8 @@ function UserModal({
                         {course.title}
                       </h5>
                       <div className="flex items-center gap-1.5 text-sm flex-shrink-0">
-                        <span className="line-through text-gray-400 text-xs">${course.price}</span>
-                        <span className="font-bold text-emerald-600">${course.discountedPrice}</span>
+                        <span className="line-through text-gray-400 text-xs">${course.discountedPrice}</span>
+                        <span className="font-bold text-emerald-600">${course.price}</span>
                       </div>
                     </div>
                     <div className="text-xs text-gray-400 flex items-center gap-1">

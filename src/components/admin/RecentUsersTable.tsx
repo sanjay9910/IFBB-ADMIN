@@ -36,9 +36,10 @@ type Student = {
   avatar?: string;
   courses: Course[];
   createdAt: string;
+  status: string;
 };
 
-type FilterType = "all" | "active" | "inactive";
+type FilterType = "all" | "Active" | "Offline";
 
 /* ================= CONFIG ================= */
 
@@ -119,7 +120,7 @@ function MobileStudentCard({
             {student.email}
           </p>
         </div>
-        {student.active ? (
+        {student.status === "Active" ? (
           <span className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-semibold border border-emerald-100">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block"></span>
             Active
@@ -127,7 +128,7 @@ function MobileStudentCard({
         ) : (
           <span className="flex-shrink-0 inline-flex items-center gap-1 px-2.5 py-1 bg-red-50 text-red-600 rounded-full text-xs font-semibold border border-red-100">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block"></span>
-            Inactive
+            Offline
           </span>
         )}
       </div>
@@ -167,10 +168,10 @@ function UserModal({
 }) {
   return (
     <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm  flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-white rounded h-[700px] sm:rounded w-full sm:max-w-2xl overflow-hidden shadow animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 duration-300">
+      <div className="bg-white rounded h-[790px] sm:rounded w-full sm:max-w-2xl overflow-hidden shadow animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 duration-300">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 p-5 sm:p-6 text-white flex justify-between items-center">
           <div>
@@ -209,7 +210,7 @@ function UserModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="p-4 bg-gray-50 rounded border border-gray-200">
               <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Status</div>
-              {student.active ? (
+              {student.status === "Active" ? (
                 <span className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 font-semibold rounded border border-emerald-200 text-sm">
                   <CheckCircle2 className="w-4 h-4" />
                   Active Account
@@ -217,7 +218,7 @@ function UserModal({
               ) : (
                 <span className="inline-flex items-center gap-2 px-3 py-2 bg-red-50 text-red-600 font-semibold rounded border border-red-200 text-sm">
                   <XCircle className="w-4 h-4" />
-                  Inactive Account
+                  Offline Account
                 </span>
               )}
             </div>
@@ -327,13 +328,13 @@ export default function UsersList() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Check if response has users array
         const usersData = res.data.users || [];
 
         const mapped: Student[] = usersData.map((u: any, idx: number) => ({
           id: u._id,
           name: u.name || "Unknown",
           email: u.email || "N/A",
+          status: u.status || "Offline",
           active: !u.isBannedByAdmin,
           avatar: u.avatar || avatarDataUrl(u.name || "U", idx),
           courses: (u.purchasedCourses || []).map((course: any) => ({
@@ -376,8 +377,8 @@ export default function UsersList() {
       );
     }
 
-    if (filter === "active") result = result.filter((s) => s.active);
-    else if (filter === "inactive") result = result.filter((s) => !s.active);
+    if (filter === "Active") result = result.filter((s) => s.status === "Active");
+    else if (filter === "Offline") result = result.filter((s) => s.status === "Offline");
 
     setFilteredStudents(result);
   }, [search, filter, students]);
@@ -385,10 +386,10 @@ export default function UsersList() {
   /* ---- Stats ---- */
   const stats = useMemo(() => {
     const total = students.length;
-    const active = students.filter((s) => s.active).length;
-    const inactive = total - active;
+    const active = students.filter((s) => s.status === "Active").length;
+    const offline = total - active;
     const activePercent = total > 0 ? Math.round((active / total) * 100) : 0;
-    return { total, active, inactive, activePercent };
+    return { total, active, offline, activePercent };
   }, [students]);
 
   /* ---- Auth guard loading ---- */
@@ -473,16 +474,15 @@ export default function UsersList() {
             </div>
           </div>
 
-          {/* Inactive */}
+          {/* Offline */}
           <div className="bg-white rounded shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Inactive</p>
+              <p className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Offline</p>
               <div className="p-2.5 bg-red-50 rounded">
                 <XCircle className="w-5 h-5 text-red-500" />
               </div>
             </div>
-            <p className="text-4xl font-extrabold text-red-500">{stats.inactive}</p>
-            <p className="text-xs text-gray-400 mt-1">Banned or restricted</p>
+            <p className="text-4xl font-extrabold text-red-500">{stats.offline}</p>
           </div>
         </div>
 
@@ -503,7 +503,7 @@ export default function UsersList() {
 
             {/* Filter Tabs */}
             <div className="flex gap-2 flex-wrap">
-              {(["all", "active", "inactive"] as FilterType[]).map((f) => (
+              {(["all", "Active", "Offline"] as FilterType[]).map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
@@ -511,13 +511,13 @@ export default function UsersList() {
                     filter === f
                       ? f === "all"
                         ? "bg-indigo-600 text-white shadow-sm"
-                        : f === "active"
+                        : f === "Active"
                         ? "bg-emerald-600 text-white shadow-sm"
                         : "bg-red-500 text-white shadow-sm"
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
-                  {f === "all" ? "All Users" : f === "active" ? "✓ Active" : "✕ Inactive"}
+                  {f === "all" ? "All Users" : f === "Active" ? "✓ Active" : "✕ Offline"}
                 </button>
               ))}
             </div>
@@ -592,7 +592,7 @@ export default function UsersList() {
 
                         {/* Status */}
                         <td className="px-5 py-4">
-                          {student.active ? (
+                          {student.status === "Active" ? (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-100">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
                               Active
@@ -600,7 +600,7 @@ export default function UsersList() {
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-full text-xs font-bold border border-red-100">
                               <span className="w-1.5 h-1.5 rounded-full bg-red-500 inline-block" />
-                              Inactive
+                              Offline
                             </span>
                           )}
                         </td>

@@ -326,7 +326,6 @@ export default function CoursesAdminPage() {
 
     setLoading(true);
     try {
-      // Call 1: Stats ke liye (stat cards update hone ke liye)
       const statsResponse = await fetch(`${API_BASE_URL}/get-stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -336,7 +335,6 @@ export default function CoursesAdminPage() {
 
       if (statsResponse.ok) {
         const statsData = await statsResponse.json();
-        console.log("Revenue", statsData)
         setStats({
           totalCourses: statsData.stats?.totalCourses || 0,
           totalUsers: statsData.stats?.totalUsers || 0,
@@ -352,10 +350,9 @@ export default function CoursesAdminPage() {
           totalItems: statsData.stats?.totalCourses || 0
         }));
       }
-
-      // Call 2: ✅ Saare courses fetch karne ke liye alag endpoint
       const coursesResponse = await fetch(
         `${API_BASE_URL}/get-all-courses?page=${page}&limit=${pagination.itemsPerPage}`,
+        // `https://6jnqmj85-5003.inc1.devtunnels.ms/api/admin/get-all-courses?page=${page}&limit=${pagination.itemsPerPage}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -366,8 +363,6 @@ export default function CoursesAdminPage() {
 
       if (coursesResponse.ok) {
         const coursesData = await coursesResponse.json();
-
-        // ✅ Backend ke response shape ke hisaab se adjust karo
         const rawCourses =
           coursesData.courses ||
           coursesData.data ||
@@ -453,26 +448,27 @@ export default function CoursesAdminPage() {
   }, [query, courses]);
 
   /* Handlers */
-  function openNewCourse() {
-    setEditing({
-      _id: "",
-      title: "",
-      price: 0,
-      discountedPrice: undefined,
-      rating: 0,
-      durationToComplete: "",
-      modules: [],
-      courseThumbnail: null,
-      thumbnailFile: null,
-      description: "",
-      isPublic: false,
-      published: false,
-      tags: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    });
-    setFormOpen(true);
-  }
+function openNewCourse() {
+  setEditing({
+    _id: "",
+    title: "",
+    price: 0,
+    discountedPrice: undefined,
+    rating: 0,
+    durationToComplete: "",
+    modules: [],
+    courseThumbnail: null,
+    thumbnailFile: null,
+    description: "",
+    isPublic: false,
+    published: false,
+    tags: [],
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    actual_price: 0 // ✅ ADD THIS
+  });
+  setFormOpen(true);
+}
 
   function openEditCourse(c: Course) {
     setEditing({
@@ -1210,7 +1206,7 @@ export default function CoursesAdminPage() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
                   <textarea
-                  placeholder="Minimum length 10 words..."
+                    placeholder="Minimum length 10 words..."
                     value={editing.description || ""}
                     onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                     rows={3}
@@ -1235,7 +1231,7 @@ export default function CoursesAdminPage() {
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Discounted Price (%)</label>
                     <input
-                    placeholder="%"
+                      placeholder="%"
                       type="number"
                       step="0.01"
                       min="0"
@@ -1627,7 +1623,7 @@ export default function CoursesAdminPage() {
               </div>
             </div>
 
-            <div className="p-6 overflow-y-auto max-h-[60vh]">
+            <div className="p-6 overflow-y-auto max-h-[56vh]">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Course Details */}
                 <div className="md:col-span-2">
@@ -1730,10 +1726,14 @@ export default function CoursesAdminPage() {
                     <div className="space-y-2">
                       <div>
                         <div className="text-sm text-slate-500">Price</div>
-                        <div className="text-xl font-bold text-slate-900">${formatPrice(selectedCourse.price)}</div>
+                        <div className="flex items-center  gap-4">
+                          <div className="text-xl line-through  text-slate-900">${formatPrice(selectedCourse.price)}</div>
+                          <div className="text-xl  font-bold text-slate-900">${formatPrice(selectedCourse.actual_price)}</div>
+                        </div>
+
                         {selectedCourse.discountedPrice && (
-                          <div className="text-sm text-slate-400 line-through mt-1">
-                            ${formatPrice(selectedCourse.discountedPrice)}
+                          <div className="text-sm absolute top-2 bg-green-600  text-white p-1 left-3 rounded mt-1">
+                            {formatPrice(selectedCourse.discountedPrice)}%
                           </div>
                         )}
                       </div>
